@@ -14,65 +14,32 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { PostCard } from '../../components/PostCard';
 import { CreatePost } from '../../components/CreatePost';
 import { Colors, Spacing, BorderRadius, Typography, Shadows } from '../../constants/theme';
+import { useGetAllPosts, useCreatePost, useGetCurrentUser } from '../../services/convex';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
 
-// Mock data for posts
-const mockPosts = [
-  {
-    _id: '1',
-    content: 'Just had an amazing day at the beach! The sunset was absolutely breathtaking 🏖️✨',
-    image: 'https://picsum.photos/400/400?random=1',
-    createdAt: Date.now() - 3600000,
-    author: {
-      name: 'Sarah Johnson',
-      avatar: 'https://picsum.photos/100/100?random=1',
-    },
-  },
-  {
-    _id: '2',
-    content: 'Working on some exciting new projects. Innovation never stops! Can\'t wait to share more details soon 🚀',
-    createdAt: Date.now() - 7200000,
-    author: {
-      name: 'Alex Chen',
-    },
-  },
-  {
-    _id: '3',
-    content: 'Beautiful morning vibes ☀️',
-    image: 'https://picsum.photos/400/400?random=2',
-    createdAt: Date.now() - 10800000,
-    author: {
-      name: 'Mike Rodriguez',
-      avatar: 'https://picsum.photos/100/100?random=2',
-    },
-  },
-  {
-    _id: '4',
-    content: 'Coffee and code - the perfect combination for a productive day! ☕️💻',
-    image: 'https://picsum.photos/400/400?random=3',
-    createdAt: Date.now() - 14400000,
-    author: {
-      name: 'Emma Wilson',
-      avatar: 'https://picsum.photos/100/100?random=3',
-    },
-  },
-];
+// Posts are now loaded from Convex database
 
 export default function Feed() {
-  const [posts, setPosts] = useState(mockPosts);
+  const { user } = useSelector((state: RootState) => state.auth);
+  const posts = useGetAllPosts() || [];
+  const createPost = useCreatePost();
+  const currentUser = useGetCurrentUser(user?.id || '');
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const handleCreatePost = (content: string, image?: string) => {
-    const newPost: any = {
-      _id: Date.now().toString(),
-      content,
-      ...(image && { image }),
-      createdAt: Date.now(),
-      author: {
-        name: 'You',
-      },
-    };
-    setPosts([newPost, ...posts]);
+  const handleCreatePost = async (content: string, image?: string) => {
+    if (!currentUser?._id) return;
+    
+    try {
+      await createPost({
+        userId: currentUser._id,
+        content,
+        ...(image && { image }),
+      });
+    } catch (error) {
+      console.error('Failed to create post:', error);
+    }
   };
 
   const onRefresh = () => {
@@ -145,6 +112,13 @@ export default function Feed() {
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => <PostCard post={item} />}
         ListHeaderComponent={renderHeader}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Ionicons name="images-outline" size={64} color={Colors.textMuted} />
+            <Text style={styles.emptyTitle}>No posts yet</Text>
+            <Text style={styles.emptySubtitle}>Be the first to share something!</Text>
+          </View>
+        }
         refreshControl={
           <RefreshControl 
             refreshing={refreshing} 
@@ -288,5 +262,21 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: Spacing.xxxl * 2,
+    paddingHorizontal: Spacing.xl,
+  },
+  emptyTitle: {
+    ...Typography.h3,
+    color: Colors.text,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+  emptySubtitle: {
+    ...Typography.body,
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
 });

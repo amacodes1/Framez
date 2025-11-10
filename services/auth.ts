@@ -30,12 +30,14 @@ export const AuthService = {
   },
 
   async login(email: string, password: string): Promise<{ user: any; token: string }> {
-    // Simulate API call - replace with actual authentication
+    // Simulate API call - in production, integrate with your auth provider
+    const clerkId = Math.random().toString(36).substr(2, 9);
     const mockUser = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: clerkId,
       email,
       name: email.split('@')[0],
       avatar: null,
+      clerkId,
     };
     const mockToken = 'mock_token_' + Date.now();
     
@@ -46,12 +48,14 @@ export const AuthService = {
   },
 
   async register(name: string, email: string, password: string): Promise<{ user: any; token: string }> {
-    // Simulate API call - replace with actual registration
+    // Simulate API call - in production, integrate with your auth provider
+    const clerkId = Math.random().toString(36).substr(2, 9);
     const mockUser = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: clerkId,
       email,
       name,
       avatar: null,
+      clerkId,
     };
     const mockToken = 'mock_token_' + Date.now();
     

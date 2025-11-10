@@ -16,7 +16,7 @@
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
     "@reduxjs/toolkit": "^2.0.1",
-    "convex": "^1.16.4",
+    "convex": "^1.28.2",
     "expo": "~54.0.23",
     "expo-constants": "~18.0.10",
     "expo-font": "~14.0.9",

@@ -4,6 +4,7 @@ import { Provider, useDispatch } from 'react-redux';
 import { store } from '../store';
 import { setUser, clearUser, setLoading } from '../store/authSlice';
 import { AuthService } from '../services/auth';
+import { ConvexClientProvider } from './ConvexClientProvider';
 
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch();
@@ -32,14 +33,16 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
-    <Provider store={store}>
-      <AuthProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="auth" />
-          <Stack.Screen name="(tabs)" />
-        </Stack>
-      </AuthProvider>
-    </Provider>
+    <ConvexClientProvider>
+      <Provider store={store}>
+        <AuthProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="auth" />
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+        </AuthProvider>
+      </Provider>
+    </ConvexClientProvider>
   );
 }

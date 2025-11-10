@@ -33,16 +33,43 @@ Framez is a modern social media mobile application built with React Native and E
    npm install
    ```
 
-3. **Start the development server**
+3. **Set up Convex**
+   ```bash
+   # Update .env.local with your Convex deployment URL
+   EXPO_PUBLIC_CONVEX_URL=https://your-deployment-url.convex.cloud
+   ```
+
+4. **Start the development server**
    ```bash
    npx expo start
    ```
 
-4. **Run on device/simulator**
+5. **Run on device/simulator**
    - Scan QR code with Expo Go app (Android/iOS)
    - Press 'a' for Android emulator
    - Press 'i' for iOS simulator
    - Press 'w' for web browser
+
+## Convex Backend Setup 🔧
+
+The app is fully integrated with Convex for real-time data management:
+
+### Database Schema
+- **Users**: Store user profiles with authentication
+- **Posts**: Store user posts with content and images
+
+### API Functions
+- `users.createUser`: Create new user profiles
+- `users.getCurrentUser`: Get current user data
+- `posts.createPost`: Create new posts
+- `posts.getAllPosts`: Get all posts for feed
+- `posts.getUserPosts`: Get posts by specific user
+
+### Environment Variables
+Update `.env.local` with your Convex deployment URL:
+```
+EXPO_PUBLIC_CONVEX_URL=https://your-deployment-url.convex.cloud
+```
 
 ## Project Structure 📁
 
@@ -50,6 +77,7 @@ Framez is a modern social media mobile application built with React Native and E
 Framez/
 ├── app/                    # App screens and navigation
 │   ├── (tabs)/            # Tab navigation screens
+│   ├── ConvexClientProvider.tsx # Convex React integration
 │   ├── auth.tsx           # Authentication screen
 │   └── index.tsx          # App entry point
 ├── components/            # Reusable UI components
@@ -59,11 +87,14 @@ Framez/
 │   ├── authSlice.ts       # Authentication state
 │   └── index.ts           # Store setup
 ├── services/              # API and authentication services
-│   └── auth.ts            # Authentication service
+│   ├── auth.ts            # Authentication service
+│   └── convex.ts          # Convex hooks and utilities
 ├── convex/                # Backend functions (Convex)
 │   ├── schema.ts          # Database schema
 │   ├── users.ts           # User operations
-│   └── posts.ts           # Post operations
+│   ├── posts.ts           # Post operations
+│   ├── auth.ts            # Authentication functions
+│   └── http.ts            # HTTP router
 └── constants/             # App constants and theme
     └── theme.ts           # Color and styling constants
 ```
@@ -74,26 +105,19 @@ Framez/
 - Secure login/registration flow
 - Persistent sessions using Expo SecureStore
 - Automatic redirect based on auth state
+- Convex user creation and management
 
 ### Posts
 - Create posts with text and optional images
 - Image picker integration for photo uploads
-- Chronological feed display
+- Real-time feed updates via Convex
 - User-specific post filtering
 
 ### Profile
 - User information display
-- Personal post history
+- Personal post history from Convex
 - Post count statistics
 - Logout functionality
-
-## Backend Configuration (Convex) ⚙️
-
-The app is configured to work with Convex for real-time data management:
-
-1. **Database Schema**: Users and Posts tables with proper indexing
-2. **Real-time Queries**: Automatic updates when data changes
-3. **Mutations**: Create users and posts with validation
 
 ## Testing 📱
 
@@ -122,13 +146,6 @@ npx expo build:android
 npx expo build:ios
 ```
 
-## Environment Variables 🔐
-
-Create a `.env` file for production:
-```
-CONVEX_DEPLOYMENT=your-convex-deployment-url
-```
-
 ## Contributing 🤝
 
 1. Fork the repository
@@ -143,4 +160,4 @@ This project is licensed under the MIT License.
 
 ---
 
-**Built with ❤️ using React Native and Expo**
+**Built with ❤️ using React Native, Expo, and Convex**

@@ -20,42 +20,16 @@ import { clearUser } from '../../store/authSlice';
 import { AuthService } from '../../services/auth';
 import { PostCard } from '../../components/PostCard';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
+import { useGetCurrentUser, useGetUserPosts } from '../../services/convex';
 
 const { width } = Dimensions.get('window');
 
-// Mock user posts
-const mockUserPosts = [
-  {
-    _id: '4',
-    content: 'My first post on Framez! Excited to be part of this amazing community 🎉',
-    createdAt: Date.now() - 86400000,
-    author: {
-      name: 'You',
-    },
-  },
-  {
-    _id: '5',
-    content: 'Beautiful morning walk in the park. Nature always inspires me 🌳',
-    image: 'https://picsum.photos/400/400?random=4',
-    createdAt: Date.now() - 172800000,
-    author: {
-      name: 'You',
-    },
-  },
-  {
-    _id: '6',
-    content: 'Working on some creative projects today. The grind never stops! 💪',
-    image: 'https://picsum.photos/400/400?random=5',
-    createdAt: Date.now() - 259200000,
-    author: {
-      name: 'You',
-    },
-  },
-];
+// User posts are now loaded from Convex database
 
 export default function Profile() {
   const { user } = useSelector((state: RootState) => state.auth);
-  const [userPosts, setUserPosts] = useState(mockUserPosts);
+  const currentUser = useGetCurrentUser(user?.id || '');
+  const userPosts = useGetUserPosts(currentUser?._id) || [];
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const dispatch = useDispatch();
   const router = useRouter();
@@ -225,6 +199,13 @@ export default function Profile() {
           renderItem={renderGridItem}
           numColumns={3}
           ListHeaderComponent={renderProfileHeader}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Ionicons name="camera-outline" size={64} color={Colors.textMuted} />
+              <Text style={styles.emptyTitle}>No posts yet</Text>
+              <Text style={styles.emptySubtitle}>Share your first post!</Text>
+            </View>
+          }
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.gridContainer}
         />
@@ -235,6 +216,13 @@ export default function Profile() {
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => <PostCard post={item} />}
           ListHeaderComponent={renderProfileHeader}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Ionicons name="camera-outline" size={64} color={Colors.textMuted} />
+              <Text style={styles.emptyTitle}>No posts yet</Text>
+              <Text style={styles.emptySubtitle}>Share your first post!</Text>
+            </View>
+          }
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -429,6 +417,22 @@ const styles = StyleSheet.create({
   },
   gridText: {
     ...Typography.small,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: Spacing.xxxl * 2,
+    paddingHorizontal: Spacing.xl,
+  },
+  emptyTitle: {
+    ...Typography.h3,
+    color: Colors.text,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+  emptySubtitle: {
+    ...Typography.body,
     color: Colors.textSecondary,
     textAlign: 'center',
   },
