@@ -108,7 +108,13 @@ export default function Feed() {
       </View>
 
       <FlatList
-        data={posts}
+        data={posts.filter(post => post.author).map(post => ({
+          ...post,
+          author: {
+            name: post.author!.name,
+            avatar: post.author!.avatar
+          }
+        }))}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => <PostCard post={item} />}
         ListHeaderComponent={renderHeader}

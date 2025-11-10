@@ -214,7 +214,13 @@ export default function Profile() {
           key="list"
           data={userPosts}
           keyExtractor={(item) => item._id}
-          renderItem={({ item }) => <PostCard post={item} />}
+          renderItem={({ item }) => <PostCard post={{
+            ...item,
+            author: {
+              name: currentUser?.name || 'You',
+              avatar: currentUser?.avatar
+            }
+          }} />}
           ListHeaderComponent={renderProfileHeader}
           ListEmptyComponent={
             <View style={styles.emptyState}>
