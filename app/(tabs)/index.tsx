@@ -18,7 +18,6 @@ import { useGetAllPosts, useCreatePost, useGetCurrentUser } from '../../services
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 
-// Posts are now loaded from Convex database
 
 export default function Feed() {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -29,7 +28,10 @@ export default function Feed() {
   const [refreshing, setRefreshing] = useState(false);
 
   const handleCreatePost = async (content: string, image?: string) => {
-    if (!currentUser?._id) return;
+    if (!currentUser?._id) {
+      console.log('No current user found');
+      return;
+    }
     
     try {
       await createPost({
@@ -37,8 +39,13 @@ export default function Feed() {
         content,
         ...(image && { image }),
       });
+      // Show success notification
+      setTimeout(() => {
+        alert('Post created successfully! 🎉');
+      }, 500);
     } catch (error) {
       console.error('Failed to create post:', error);
+      alert('Failed to create post. Please try again.');
     }
   };
 

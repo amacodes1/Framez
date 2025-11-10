@@ -20,19 +20,38 @@ import { clearUser } from '../../store/authSlice';
 import { AuthService } from '../../services/auth';
 import { PostCard } from '../../components/PostCard';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
-import { useGetCurrentUser, useGetUserPosts } from '../../services/convex';
+import { useGetCurrentUser, useGetUserPosts, useUpdateUser } from '../../services/convex';
+import { EditProfile } from '../../components/EditProfile';
 
 const { width } = Dimensions.get('window');
 
-// User posts are now loaded from Convex database
 
 export default function Profile() {
   const { user } = useSelector((state: RootState) => state.auth);
   const currentUser = useGetCurrentUser(user?.id || '');
   const userPosts = useGetUserPosts(currentUser?._id) || [];
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showEditProfile, setShowEditProfile] = useState(false);
   const dispatch = useDispatch();
   const router = useRouter();
+  const updateUser = useUpdateUser();
+
+  const handleEditProfile = async (name: string, email: string, avatar?: string, bio?: string) => {
+    if (!currentUser?._id) return;
+    
+    try {
+      await updateUser({
+        userId: currentUser._id,
+        name,
+        email,
+        avatar,
+        bio,
+      });
+      Alert.alert('Success', 'Profile updated successfully! ✨');
+    } catch {
+      Alert.alert('Error', 'Failed to update profile');
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -77,10 +96,10 @@ export default function Profile() {
             style={styles.avatarGradient}
           >
             <View style={styles.avatar}>
-              {user?.avatar ? (
-                <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+              {currentUser?.avatar ? (
+                <Image source={{ uri: currentUser.avatar }} style={styles.avatarImage} />
               ) : (
-                <Text style={styles.avatarText}>{user?.name?.charAt(0).toUpperCase()}</Text>
+                <Text style={styles.avatarText}>{currentUser?.name?.charAt(0).toUpperCase()}</Text>
               )}
             </View>
           </LinearGradient>
@@ -104,17 +123,17 @@ export default function Profile() {
 
       {/* User Details */}
       <View style={styles.userDetails}>
-        <Text style={styles.userName}>{user?.name}</Text>
-        <Text style={styles.userBio}>
-          ✨ Living life one frame at a time{'\n'}
-          📍 San Francisco, CA{'\n'}
-          🎨 Creative enthusiast
-        </Text>
+        <Text style={styles.userName}>{currentUser?.name}</Text>
+        {currentUser?.bio ? (
+          <Text style={styles.userBio}>{currentUser.bio}</Text>
+        ) : (
+          <Text style={styles.userBioPlaceholder}>Add a bio to tell people about yourself</Text>
+        )}
       </View>
 
       {/* Action Buttons */}
       <View style={styles.actionButtons}>
-        <TouchableOpacity style={styles.editButton}>
+        <TouchableOpacity style={styles.editButton} onPress={() => setShowEditProfile(true)}>
           <Text style={styles.editButtonText}>Edit Profile</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.shareButton}>
@@ -177,7 +196,7 @@ export default function Profile() {
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>{user.name}</Text>
+        <Text style={styles.headerTitle}>{currentUser?.name || user?.name}</Text>
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.headerButton}>
             <Ionicons name="add-outline" size={24} color={Colors.text} />
@@ -232,6 +251,16 @@ export default function Profile() {
           showsVerticalScrollIndicator={false}
         />
       )}
+      
+      <EditProfile
+        visible={showEditProfile}
+        onClose={() => setShowEditProfile(false)}
+        onSubmit={handleEditProfile}
+        initialName={currentUser?.name || ''}
+        initialEmail={currentUser?.email || ''}
+        initialAvatar={currentUser?.avatar}
+        initialBio={currentUser?.bio}
+      />
     </SafeAreaView>
   );
 }
@@ -328,6 +357,12 @@ const styles = StyleSheet.create({
   userBio: {
     ...Typography.body,
     color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+  userBioPlaceholder: {
+    ...Typography.body,
+    color: Colors.textMuted,
+    fontStyle: 'italic',
     lineHeight: 20,
   },
   actionButtons: {

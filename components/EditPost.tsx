@@ -13,21 +13,29 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius, Typography, Shadows } from '../constants/theme';
+import { Colors, Spacing, BorderRadius, Typography } from '../constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 
-interface CreatePostProps {
+interface EditPostProps {
   visible: boolean;
   onClose: () => void;
   onSubmit: (content: string, image?: string) => void;
+  initialContent: string;
+  initialImage?: string;
 }
 
 const { width } = Dimensions.get('window');
 
-export const CreatePost: React.FC<CreatePostProps> = ({ visible, onClose, onSubmit }) => {
-  const [content, setContent] = useState('');
-  const [image, setImage] = useState<string | null>(null);
-  const [isPosting, setIsPosting] = useState(false);
+export const EditPost: React.FC<EditPostProps> = ({ 
+  visible, 
+  onClose, 
+  onSubmit, 
+  initialContent, 
+  initialImage 
+}) => {
+  const [content, setContent] = useState(initialContent);
+  const [image, setImage] = useState<string | null>(initialImage || null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -48,83 +56,44 @@ export const CreatePost: React.FC<CreatePostProps> = ({ visible, onClose, onSubm
     }
   };
 
-  const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please grant camera permissions to take photos.');
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-    }
-  };
-
   const handleSubmit = async () => {
-    if (!content.trim() && !image) {
-      Alert.alert('Error', 'Please add some content or an image to your post');
+    if (!content.trim()) {
+      Alert.alert('Error', 'Please enter some content for your post');
       return;
     }
 
-    setIsPosting(true);
+    setIsUpdating(true);
     
-    // Simulate posting delay
     setTimeout(() => {
       onSubmit(content, image || undefined);
-      setContent('');
-      setImage(null);
-      setIsPosting(false);
+      setIsUpdating(false);
       onClose();
     }, 1000);
   };
 
   const handleClose = () => {
-    if (content.trim() || image) {
-      Alert.alert(
-        'Discard post?',
-        'Are you sure you want to discard this post?',
-        [
-          { text: 'Keep editing', style: 'cancel' },
-          { 
-            text: 'Discard', 
-            style: 'destructive',
-            onPress: () => {
-              setContent('');
-              setImage(null);
-              onClose();
-            }
-          }
-        ]
-      );
-    } else {
-      onClose();
-    }
+    setContent(initialContent);
+    setImage(initialImage || null);
+    onClose();
   };
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">
       <View style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleClose} style={styles.headerButton}>
             <Ionicons name="close" size={24} color={Colors.text} />
           </TouchableOpacity>
           
-          <Text style={styles.title}>New Post</Text>
+          <Text style={styles.title}>Edit Post</Text>
           
           <TouchableOpacity 
             onPress={handleSubmit} 
-            style={[styles.postButton, (!content.trim() && !image) && styles.postButtonDisabled]}
-            disabled={(!content.trim() && !image) || isPosting}
+            style={[styles.updateButton, !content.trim() && styles.updateButtonDisabled]}
+            disabled={!content.trim() || isUpdating}
           >
-            {isPosting ? (
-              <Text style={styles.postButtonText}>Posting...</Text>
+            {isUpdating ? (
+              <Text style={styles.updateButtonText}>Updating...</Text>
             ) : (
               <LinearGradient
                 colors={[Colors.gradientStart, Colors.gradientMiddle, Colors.gradientEnd]}
@@ -132,25 +101,16 @@ export const CreatePost: React.FC<CreatePostProps> = ({ visible, onClose, onSubm
                 end={{ x: 1, y: 0 }}
                 style={styles.gradientButton}
               >
-                <Text style={styles.postButtonText}>Share</Text>
+                <Text style={styles.updateButtonText}>Update</Text>
               </LinearGradient>
             )}
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* User info */}
-          <View style={styles.userSection}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>U</Text>
-            </View>
-            <Text style={styles.username}>Your Story</Text>
-          </View>
-
-          {/* Text input */}
           <TextInput
             style={styles.textInput}
-            placeholder="What's happening?"
+            placeholder="What's on your mind?"
             placeholderTextColor={Colors.textMuted}
             multiline
             value={content}
@@ -159,10 +119,8 @@ export const CreatePost: React.FC<CreatePostProps> = ({ visible, onClose, onSubm
             maxLength={280}
           />
 
-          {/* Character count */}
           <Text style={styles.characterCount}>{content.length}/280</Text>
 
-          {/* Selected image */}
           {image && (
             <View style={styles.imageContainer}>
               <Image source={{ uri: image }} style={styles.selectedImage} />
@@ -175,29 +133,10 @@ export const CreatePost: React.FC<CreatePostProps> = ({ visible, onClose, onSubm
             </View>
           )}
 
-          {/* Media options */}
-          <View style={styles.mediaOptions}>
-            <TouchableOpacity style={styles.mediaButton} onPress={pickImage}>
-              <View style={styles.mediaIconContainer}>
-                <Ionicons name="images" size={24} color={Colors.secondary} />
-              </View>
-              <Text style={styles.mediaButtonText}>Gallery</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.mediaButton} onPress={takePhoto}>
-              <View style={styles.mediaIconContainer}>
-                <Ionicons name="camera" size={24} color={Colors.primary} />
-              </View>
-              <Text style={styles.mediaButtonText}>Camera</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.mediaButton}>
-              <View style={styles.mediaIconContainer}>
-                <Ionicons name="location" size={24} color={Colors.success} />
-              </View>
-              <Text style={styles.mediaButtonText}>Location</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
+            <Ionicons name="images" size={24} color={Colors.secondary} />
+            <Text style={styles.imagePickerText}>Change Photo</Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
     </Modal>
@@ -226,11 +165,11 @@ const styles = StyleSheet.create({
     ...Typography.h3,
     color: Colors.text,
   },
-  postButton: {
+  updateButton: {
     borderRadius: BorderRadius.full,
     overflow: 'hidden',
   },
-  postButtonDisabled: {
+  updateButtonDisabled: {
     opacity: 0.5,
   },
   gradientButton: {
@@ -238,7 +177,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.full,
   },
-  postButtonText: {
+  updateButtonText: {
     ...Typography.bodyMedium,
     color: Colors.text,
     textAlign: 'center',
@@ -247,33 +186,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: Spacing.lg,
   },
-  userSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.lg,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Spacing.md,
-  },
-  avatarText: {
-    ...Typography.h3,
-    color: Colors.text,
-  },
-  username: {
-    ...Typography.bodyMedium,
-    color: Colors.text,
-  },
   textInput: {
     ...Typography.body,
     color: Colors.text,
     minHeight: 120,
     textAlignVertical: 'top',
+    marginTop: Spacing.lg,
     marginBottom: Spacing.md,
   },
   characterCount: {
@@ -301,30 +219,17 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     padding: Spacing.xs,
   },
-  mediaOptions: {
+  imagePickerButton: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: Spacing.xl,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    alignItems: 'center',
+    padding: Spacing.lg,
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
     marginTop: Spacing.lg,
   },
-  mediaButton: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  mediaIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.sm,
-    ...Shadows.small,
-  },
-  mediaButtonText: {
-    ...Typography.caption,
-    color: Colors.textSecondary,
+  imagePickerText: {
+    marginLeft: Spacing.md,
+    ...Typography.body,
+    color: Colors.secondary,
   },
 });

@@ -25,8 +25,10 @@ export default function Auth() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const dispatch = useDispatch();
   const router = useRouter();
@@ -34,6 +36,11 @@ export default function Auth() {
   const handleSubmit = async () => {
     if (!email || !password || (!isLogin && !name)) {
       Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (!isLogin && password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
       return;
     }
 
@@ -48,7 +55,7 @@ export default function Auth() {
 
       dispatch(setUser(result.user));
       router.replace('/(tabs)');
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Authentication failed');
     } finally {
       setLoading(false);
@@ -135,6 +142,30 @@ export default function Auth() {
               </TouchableOpacity>
             </View>
 
+            {!isLogin && (
+              <View style={styles.inputContainer}>
+                <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, styles.passwordInput]}
+                  placeholder="Confirm Password"
+                  placeholderTextColor={Colors.textMuted}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                />
+                <TouchableOpacity 
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons 
+                    name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} 
+                    size={20} 
+                    color={Colors.textMuted} 
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+
             <TouchableOpacity
               style={[styles.submitButton, loading && styles.submitButtonDisabled]}
               onPress={handleSubmit}
@@ -186,6 +217,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.xxxl,
     justifyContent: 'center',
   },
   logoSection: {

@@ -10,7 +10,9 @@
 
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
+import type * as likes from "../likes.js";
 import type * as posts from "../posts.js";
+import type * as search from "../search.js";
 import type * as seedData from "../seedData.js";
 import type * as users from "../users.js";
 
@@ -31,7 +33,9 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
+  likes: typeof likes;
   posts: typeof posts;
+  search: typeof search;
   seedData: typeof seedData;
   users: typeof users;
 }>;

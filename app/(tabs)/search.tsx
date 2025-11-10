@@ -13,30 +13,45 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
+import { useSearchPosts, useSearchUsers } from '../../services/convex';
+import { PostCard } from '../../components/PostCard';
 
 const { width } = Dimensions.get('window');
 
-const mockSearchResults = [
-  { id: '1', image: 'https://picsum.photos/200/200?random=10', type: 'photo' },
-  { id: '2', image: 'https://picsum.photos/200/200?random=11', type: 'video' },
-  { id: '3', image: 'https://picsum.photos/200/200?random=12', type: 'photo' },
-  { id: '4', image: 'https://picsum.photos/200/200?random=13', type: 'photo' },
-  { id: '5', image: 'https://picsum.photos/200/200?random=14', type: 'video' },
-  { id: '6', image: 'https://picsum.photos/200/200?random=15', type: 'photo' },
-];
-
 export default function Search() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'posts' | 'users'>('posts');
+  
+  const searchPosts = useSearchPosts(searchQuery) || [];
+  const searchUsers = useSearchUsers(searchQuery) || [];
 
-  const renderGridItem = ({ item }: { item: any }) => (
-    <TouchableOpacity style={styles.gridItem}>
-      <Image source={{ uri: item.image }} style={styles.gridImage} />
-      {item.type === 'video' && (
-        <View style={styles.videoIndicator}>
-          <Ionicons name="play" size={16} color={Colors.text} />
-        </View>
-      )}
+  const renderUserItem = ({ item }: { item: any }) => (
+    <TouchableOpacity style={styles.userItem}>
+      <View style={styles.userAvatar}>
+        {item.avatar ? (
+          <Image source={{ uri: item.avatar }} style={styles.avatarImage} />
+        ) : (
+          <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
+        )}
+      </View>
+      <View style={styles.userInfo}>
+        <Text style={styles.userName}>{item.name}</Text>
+        <Text style={styles.userEmail}>{item.email}</Text>
+      </View>
+      <TouchableOpacity style={styles.followButton}>
+        <Text style={styles.followButtonText}>Follow</Text>
+      </TouchableOpacity>
     </TouchableOpacity>
+  );
+
+  const renderPostItem = ({ item }: { item: any }) => (
+    <PostCard post={{
+      ...item,
+      author: {
+        name: item.author?.name || 'Unknown',
+        avatar: item.author?.avatar
+      }
+    }} />
   );
 
   return (
@@ -49,7 +64,7 @@ export default function Search() {
           <Ionicons name="search" size={20} color={Colors.textMuted} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search"
+            placeholder="Search posts and users..."
             placeholderTextColor={Colors.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -60,17 +75,50 @@ export default function Search() {
             </TouchableOpacity>
           )}
         </View>
+        
+        {/* Tabs */}
+        <View style={styles.tabs}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'posts' && styles.activeTab]}
+            onPress={() => setActiveTab('posts')}
+          >
+            <Text style={[styles.tabText, activeTab === 'posts' && styles.activeTabText]}>
+              Posts ({searchPosts.length})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'users' && styles.activeTab]}
+            onPress={() => setActiveTab('users')}
+          >
+            <Text style={[styles.tabText, activeTab === 'users' && styles.activeTabText]}>
+              Users ({searchUsers.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Content */}
-      <FlatList
-        data={mockSearchResults}
-        keyExtractor={(item) => item.id}
-        renderItem={renderGridItem}
-        numColumns={3}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.gridContainer}
-      />
+      {searchQuery.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Ionicons name="search-outline" size={64} color={Colors.textMuted} />
+          <Text style={styles.emptyTitle}>Search Framez</Text>
+          <Text style={styles.emptySubtitle}>Find posts and users</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={activeTab === 'posts' ? searchPosts : searchUsers}
+          keyExtractor={(item) => item._id}
+          renderItem={activeTab === 'posts' ? renderPostItem : renderUserItem}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Ionicons name="search-outline" size={64} color={Colors.textMuted} />
+              <Text style={styles.emptyTitle}>No results found</Text>
+              <Text style={styles.emptySubtitle}>Try a different search term</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -93,6 +141,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
+    marginBottom: Spacing.md,
   },
   searchIcon: {
     marginRight: Spacing.md,
@@ -102,25 +151,88 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: Colors.text,
   },
-  gridContainer: {
-    paddingTop: Spacing.sm,
+  tabs: {
+    flexDirection: 'row',
   },
-  gridItem: {
-    width: (width - 4) / 3,
-    height: (width - 4) / 3,
-    margin: 1,
-    position: 'relative',
+  tab: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
-  gridImage: {
-    width: '100%',
-    height: '100%',
+  activeTab: {
+    borderBottomColor: Colors.primary,
   },
-  videoIndicator: {
-    position: 'absolute',
-    top: Spacing.sm,
-    right: Spacing.sm,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+  tabText: {
+    ...Typography.bodyMedium,
+    color: Colors.textMuted,
+  },
+  activeTabText: {
+    color: Colors.text,
+  },
+  userItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.surface,
+    marginBottom: 1,
+  },
+  userAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  avatarImage: {
+    width: 50,
+    height: 50,
+    borderRadius: BorderRadius.full,
+  },
+  avatarText: {
+    ...Typography.bodyMedium,
+    color: Colors.text,
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    ...Typography.bodyMedium,
+    color: Colors.text,
+  },
+  userEmail: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+  },
+  followButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.sm,
-    padding: Spacing.xs,
+  },
+  followButtonText: {
+    ...Typography.captionMedium,
+    color: Colors.text,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+  emptyTitle: {
+    ...Typography.h3,
+    color: Colors.text,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+  emptySubtitle: {
+    ...Typography.body,
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
 });

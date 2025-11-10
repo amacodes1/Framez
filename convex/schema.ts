@@ -6,6 +6,7 @@ export default defineSchema({
     email: v.string(),
     name: v.string(),
     avatar: v.optional(v.string()),
+    bio: v.optional(v.string()),
     clerkId: v.string(),
   }).index("by_clerk_id", ["clerkId"]),
 
@@ -15,4 +16,10 @@ export default defineSchema({
     image: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_user", ["userId"]).index("by_created_at", ["createdAt"]),
+
+  likes: defineTable({
+    userId: v.id("users"),
+    postId: v.id("posts"),
+    createdAt: v.number(),
+  }).index("by_post", ["postId"]).index("by_user_post", ["userId", "postId"]),
 });

@@ -46,3 +46,23 @@ export const getCurrentUser = query({
       .first();
   },
 });
+
+export const updateUser = mutation({
+  args: {
+    userId: v.id("users"),
+    name: v.string(),
+    email: v.string(),
+    avatar: v.optional(v.string()),
+    bio: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      name: args.name,
+      email: args.email,
+      ...(args.avatar !== undefined && { avatar: args.avatar }),
+      ...(args.bio !== undefined && { bio: args.bio }),
+    });
+    
+    return { success: true };
+  },
+});

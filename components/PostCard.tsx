@@ -1,11 +1,24 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+  Alert,
+} from "react-native";
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius, Typography, Shadows } from '../constants/theme';
+import { Colors, Spacing, BorderRadius, Typography } from '../constants/theme';
 import { formatTimestamp } from '../utils/helpers';
+import { useToggleLike, useGetPostLikes, useIsPostLiked, useGetCurrentUser, useDeletePost, useEditPost } from '../services/convex';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
+import { Id } from '../convex/_generated/dataModel';
+import { EditPost } from './EditPost';
 
 interface Post {
-  _id: string;
+  _id: Id<"posts">;
   content: string;
   image?: string;
   createdAt: number;
@@ -22,13 +35,94 @@ interface PostCardProps {
 const { width } = Dimensions.get('window');
 
 export const PostCard: React.FC<PostCardProps> = ({ post }) => {
-  const [liked, setLiked] = useState(false);
+  const { user } = useSelector((state: RootState) => state.auth);
+  const currentUser = useGetCurrentUser(user?.id || '');
   const [bookmarked, setBookmarked] = useState(false);
-  const [likesCount, setLikesCount] = useState(Math.floor(Math.random() * 1000));
+  const [showEditPost, setShowEditPost] = useState(false);
+  
+  const toggleLike = useToggleLike();
+  const deletePost = useDeletePost();
+  const editPost = useEditPost();
+  const likesCount = useGetPostLikes(post._id) || 0;
+  const isLiked = useIsPostLiked(currentUser?._id, post._id) || false;
+  
+  const isOwnPost = currentUser?.clerkId === post.author.name || currentUser?.name === post.author.name;
 
-  const handleLike = () => {
-    setLiked(!liked);
-    setLikesCount(prev => liked ? prev - 1 : prev + 1);
+  const handleLike = async () => {
+    if (!currentUser?._id) return;
+    
+    try {
+      await toggleLike({
+        userId: currentUser._id,
+        postId: post._id,
+      });
+    } catch (error) {
+      console.error('Failed to toggle like:', error);
+    }
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Post',
+      'Are you sure you want to delete this post?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            if (!currentUser?._id) return;
+            
+            try {
+              await deletePost({
+                postId: post._id,
+                userId: currentUser._id,
+              });
+              Alert.alert('Success', 'Post deleted successfully');
+            } catch {
+              Alert.alert('Error', 'Failed to delete post');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEditPost = async (content: string, image?: string) => {
+    if (!currentUser?._id) return;
+    
+    try {
+      await editPost({
+        postId: post._id,
+        userId: currentUser._id,
+        content,
+        image,
+      });
+      Alert.alert('Success', 'Post updated successfully! ✨');
+    } catch {
+      Alert.alert('Error', 'Failed to update post');
+    }
+  };
+
+  const handleMoreOptions = () => {
+    if (isOwnPost) {
+      Alert.alert(
+        'Post Options',
+        'What would you like to do?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Edit Post',
+            onPress: () => setShowEditPost(true),
+          },
+          {
+            text: 'Delete Post',
+            style: 'destructive',
+            onPress: handleDelete,
+          },
+        ]
+      );
+    }
   };
 
   return (
@@ -51,7 +145,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
             <Text style={styles.timestamp}>{formatTimestamp(post.createdAt)}</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.moreButton}>
+        <TouchableOpacity style={styles.moreButton} onPress={handleMoreOptions}>
           <Ionicons name="ellipsis-horizontal" size={20} color={Colors.textSecondary} />
         </TouchableOpacity>
       </View>
@@ -73,9 +167,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         <View style={styles.leftActions}>
           <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
             <Ionicons 
-              name={liked ? "heart" : "heart-outline"} 
+              name={isLiked ? "heart" : "heart-outline"} 
               size={24} 
-              color={liked ? Colors.like : Colors.textSecondary} 
+              color={isLiked ? Colors.like : Colors.textSecondary} 
             />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton}>
@@ -96,6 +190,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
       {/* Likes count */}
       <Text style={styles.likesCount}>{likesCount.toLocaleString()} likes</Text>
+      
+      <EditPost
+        visible={showEditPost}
+        onClose={() => setShowEditPost(false)}
+        onSubmit={handleEditPost}
+        initialContent={post.content}
+        initialImage={post.image}
+      />
     </View>
   );
 };

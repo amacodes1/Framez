@@ -5,6 +5,7 @@ import { store } from '../store';
 import { setUser, clearUser, setLoading } from '../store/authSlice';
 import { AuthService } from '../services/auth';
 import { ConvexClientProvider } from './ConvexClientProvider';
+import { UserSync } from './UserSync';
 
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch();
@@ -36,6 +37,7 @@ export default function RootLayout() {
     <ConvexClientProvider>
       <Provider store={store}>
         <AuthProvider>
+          <UserSync />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="auth" />
