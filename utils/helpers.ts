@@ -2,16 +2,20 @@ export const formatTimestamp = (timestamp: number): string => {
   const now = Date.now();
   const diff = now - timestamp;
   
+  const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
+  const weeks = Math.floor(diff / 604800000);
   
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  if (days < 7) return `${days}d ago`;
+  if (seconds < 60) return 'now';
+  if (minutes < 60) return `${minutes}m`;
+  if (hours < 24) return `${hours}h`;
+  if (days < 7) return `${days}d`;
+  if (weeks < 4) return `${weeks}w`;
   
-  return new Date(timestamp).toLocaleDateString();
+  const date = new Date(timestamp);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
 export const validateEmail = (email: string): boolean => {

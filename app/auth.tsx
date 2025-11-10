@@ -8,11 +8,17 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Dimensions,
 } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { setUser } from '../store/authSlice';
 import { AuthService } from '../services/auth';
+import { Colors, Spacing, BorderRadius, Typography, Shadows } from '../constants/theme';
+
+const { width } = Dimensions.get('window');
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -20,6 +26,7 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const dispatch = useDispatch();
   const router = useRouter();
@@ -53,58 +60,118 @@ export default function Auth() {
       style={styles.container} 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.form}>
-        <Text style={styles.title}>Framez</Text>
-        <Text style={styles.subtitle}>
-          {isLogin ? 'Welcome back!' : 'Create your account'}
-        </Text>
+      <LinearGradient
+        colors={[Colors.background, Colors.backgroundLight]}
+        style={styles.gradient}
+      >
+        <View style={styles.content}>
+          {/* Logo Section */}
+          <View style={styles.logoSection}>
+            <LinearGradient
+              colors={[Colors.gradientStart, Colors.gradientMiddle, Colors.gradientEnd]}
+              style={styles.logoContainer}
+            >
+              <Ionicons name="camera" size={40} color={Colors.text} />
+            </LinearGradient>
+            <Text style={styles.appName}>Framez</Text>
+            <Text style={styles.tagline}>Share your moments</Text>
+          </View>
 
-        {!isLogin && (
-          <TextInput
-            style={styles.input}
-            placeholder="Full Name"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-          />
-        )}
+          {/* Form Section */}
+          <View style={styles.formSection}>
+            <Text style={styles.formTitle}>
+              {isLogin ? 'Welcome back!' : 'Join Framez'}
+            </Text>
+            <Text style={styles.formSubtitle}>
+              {isLogin ? 'Sign in to continue' : 'Create your account to get started'}
+            </Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+            {!isLogin && (
+              <View style={styles.inputContainer}>
+                <Ionicons name="person-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Full Name"
+                  placeholderTextColor={Colors.textMuted}
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                />
+              </View>
+            )}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+            <View style={styles.inputContainer}>
+              <Ionicons name="mail-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor={Colors.textMuted}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Sign Up'}
-          </Text>
-        </TouchableOpacity>
+            <View style={styles.inputContainer}>
+              <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, styles.passwordInput]}
+                placeholder="Password"
+                placeholderTextColor={Colors.textMuted}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity 
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons 
+                  name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                  size={20} 
+                  color={Colors.textMuted} 
+                />
+              </TouchableOpacity>
+            </View>
 
-        <TouchableOpacity
-          style={styles.switchButton}
-          onPress={() => setIsLogin(!isLogin)}
-        >
-          <Text style={styles.switchText}>
-            {isLogin ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <TouchableOpacity
+              style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              <LinearGradient
+                colors={[Colors.gradientStart, Colors.gradientMiddle, Colors.gradientEnd]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.gradientButton}
+              >
+                <Text style={styles.submitButtonText}>
+                  {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Sign Up'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {isLogin && (
+              <TouchableOpacity style={styles.forgotPassword}>
+                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Switch Mode */}
+          <View style={styles.switchSection}>
+            <Text style={styles.switchText}>
+              {isLogin ? "Don't have an account?" : 'Already have an account?'}
+            </Text>
+            <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
+              <Text style={styles.switchButton}>
+                {isLogin ? 'Sign Up' : 'Sign In'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </LinearGradient>
     </KeyboardAvoidingView>
   );
 }
@@ -112,55 +179,115 @@ export default function Auth() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+  },
+  gradient: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: Spacing.xl,
     justifyContent: 'center',
-    padding: 20,
   },
-  form: {
-    width: '100%',
+  logoSection: {
+    alignItems: 'center',
+    marginBottom: Spacing.xxxl * 2,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: BorderRadius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+    ...Shadows.medium,
+  },
+  appName: {
+    ...Typography.h1,
+    color: Colors.text,
+    marginBottom: Spacing.sm,
+  },
+  tagline: {
+    ...Typography.body,
+    color: Colors.textSecondary,
+  },
+  formSection: {
+    marginBottom: Spacing.xxxl,
+  },
+  formTitle: {
+    ...Typography.h2,
+    color: Colors.text,
     textAlign: 'center',
-    marginBottom: 10,
-    color: '#007AFF',
+    marginBottom: Spacing.sm,
   },
-  subtitle: {
-    fontSize: 16,
+  formSubtitle: {
+    ...Typography.body,
+    color: Colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 30,
-    color: '#666',
+    marginBottom: Spacing.xxxl,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    ...Shadows.small,
+  },
+  inputIcon: {
+    marginRight: Spacing.md,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 15,
-    fontSize: 16,
+    flex: 1,
+    ...Typography.body,
+    color: Colors.text,
+    paddingVertical: Spacing.lg,
   },
-  button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    padding: 15,
-    alignItems: 'center',
-    marginTop: 10,
+  passwordInput: {
+    paddingRight: Spacing.xl,
   },
-  buttonDisabled: {
+  eyeIcon: {
+    position: 'absolute',
+    right: Spacing.lg,
+    padding: Spacing.sm,
+  },
+  submitButton: {
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    marginTop: Spacing.lg,
+    ...Shadows.medium,
+  },
+  submitButtonDisabled: {
     opacity: 0.6,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  gradientButton: {
+    paddingVertical: Spacing.lg,
+    alignItems: 'center',
   },
-  switchButton: {
-    marginTop: 20,
+  submitButtonText: {
+    ...Typography.bodyMedium,
+    color: Colors.text,
+  },
+  forgotPassword: {
+    alignItems: 'center',
+    marginTop: Spacing.lg,
+  },
+  forgotPasswordText: {
+    ...Typography.caption,
+    color: Colors.secondary,
+  },
+  switchSection: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   switchText: {
-    color: '#007AFF',
-    fontSize: 14,
+    ...Typography.body,
+    color: Colors.textSecondary,
+    marginRight: Spacing.sm,
+  },
+  switchButton: {
+    ...Typography.bodyMedium,
+    color: Colors.primary,
   },
 });

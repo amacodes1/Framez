@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
-import { Provider } from 'react-redux';
+import { Provider, useDispatch } from 'react-redux';
 import { store } from '../store';
-import { useDispatch } from 'react-redux';
 import { setUser, clearUser, setLoading } from '../store/authSlice';
 import { AuthService } from '../services/auth';
 

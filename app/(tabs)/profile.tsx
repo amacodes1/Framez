@@ -5,34 +5,50 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   Alert,
+  StatusBar,
+  Dimensions,
+  Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { RootState } from '../../store';
 import { clearUser } from '../../store/authSlice';
 import { AuthService } from '../../services/auth';
 import { PostCard } from '../../components/PostCard';
+import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
+
+const { width } = Dimensions.get('window');
 
 // Mock user posts
 const mockUserPosts = [
   {
     _id: '4',
-    content: 'My first post on Framez! Excited to be here 🎉',
+    content: 'My first post on Framez! Excited to be part of this amazing community 🎉',
     createdAt: Date.now() - 86400000,
     author: {
-      name: 'Current User',
+      name: 'You',
     },
   },
   {
     _id: '5',
-    content: 'Beautiful morning walk in the park',
-    image: 'https://picsum.photos/400/300?random=3',
+    content: 'Beautiful morning walk in the park. Nature always inspires me 🌳',
+    image: 'https://picsum.photos/400/400?random=4',
     createdAt: Date.now() - 172800000,
     author: {
-      name: 'Current User',
+      name: 'You',
+    },
+  },
+  {
+    _id: '6',
+    content: 'Working on some creative projects today. The grind never stops! 💪',
+    image: 'https://picsum.photos/400/400?random=5',
+    createdAt: Date.now() - 259200000,
+    author: {
+      name: 'You',
     },
   },
 ];
@@ -40,6 +56,7 @@ const mockUserPosts = [
 export default function Profile() {
   const { user } = useSelector((state: RootState) => state.auth);
   const [userPosts, setUserPosts] = useState(mockUserPosts);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const dispatch = useDispatch();
   const router = useRouter();
 
@@ -62,6 +79,116 @@ export default function Profile() {
     );
   };
 
+  const renderGridItem = ({ item, index }: { item: any; index: number }) => (
+    <TouchableOpacity style={styles.gridItem}>
+      {item.image ? (
+        <Image source={{ uri: item.image }} style={styles.gridImage} />
+      ) : (
+        <View style={styles.gridTextPost}>
+          <Text style={styles.gridText} numberOfLines={3}>
+            {item.content}
+          </Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+
+  const renderProfileHeader = () => (
+    <View style={styles.profileHeader}>
+      {/* Profile Info */}
+      <View style={styles.profileInfo}>
+        <View style={styles.avatarSection}>
+          <LinearGradient
+            colors={[Colors.gradientStart, Colors.gradientMiddle, Colors.gradientEnd]}
+            style={styles.avatarGradient}
+          >
+            <View style={styles.avatar}>
+              {user?.avatar ? (
+                <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.avatarText}>{user?.name?.charAt(0).toUpperCase()}</Text>
+              )}
+            </View>
+          </LinearGradient>
+        </View>
+
+        <View style={styles.statsSection}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{userPosts.length}</Text>
+            <Text style={styles.statLabel}>Posts</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>1.2K</Text>
+            <Text style={styles.statLabel}>Followers</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>856</Text>
+            <Text style={styles.statLabel}>Following</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* User Details */}
+      <View style={styles.userDetails}>
+        <Text style={styles.userName}>{user?.name}</Text>
+        <Text style={styles.userBio}>
+          ✨ Living life one frame at a time{'\n'}
+          📍 San Francisco, CA{'\n'}
+          🎨 Creative enthusiast
+        </Text>
+      </View>
+
+      {/* Action Buttons */}
+      <View style={styles.actionButtons}>
+        <TouchableOpacity style={styles.editButton}>
+          <Text style={styles.editButtonText}>Edit Profile</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.shareButton}>
+          <Ionicons name="share-outline" size={20} color={Colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Highlights */}
+      <View style={styles.highlights}>
+        <Text style={styles.highlightsTitle}>Story Highlights</Text>
+        <View style={styles.highlightsList}>
+          {['Travel', 'Food', 'Work', 'Friends'].map((highlight, index) => (
+            <TouchableOpacity key={index} style={styles.highlightItem}>
+              <View style={styles.highlightCircle}>
+                <Ionicons name="images-outline" size={24} color={Colors.textMuted} />
+              </View>
+              <Text style={styles.highlightLabel}>{highlight}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* View Toggle */}
+      <View style={styles.viewToggle}>
+        <TouchableOpacity
+          style={[styles.toggleButton, viewMode === 'grid' && styles.toggleButtonActive]}
+          onPress={() => setViewMode('grid')}
+        >
+          <Ionicons 
+            name="grid-outline" 
+            size={20} 
+            color={viewMode === 'grid' ? Colors.text : Colors.textMuted} 
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.toggleButton, viewMode === 'list' && styles.toggleButtonActive]}
+          onPress={() => setViewMode('list')}
+        >
+          <Ionicons 
+            name="list-outline" 
+            size={20} 
+            color={viewMode === 'list' ? Colors.text : Colors.textMuted} 
+          />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   if (!user) {
     return (
       <SafeAreaView style={styles.container}>
@@ -72,47 +199,45 @@ export default function Profile() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Profile</Text>
-        <TouchableOpacity onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={24} color="#007AFF" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.profileInfo}>
-        <View style={styles.avatar}>
-          {user.avatar ? (
-            <Text>Avatar</Text>
-          ) : (
-            <Text style={styles.avatarText}>{user.name.charAt(0).toUpperCase()}</Text>
-          )}
-        </View>
-        <Text style={styles.userName}>{user.name}</Text>
-        <Text style={styles.userEmail}>{user.email}</Text>
-        
-        <View style={styles.stats}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{userPosts.length}</Text>
-            <Text style={styles.statLabel}>Posts</Text>
-          </View>
+        <Text style={styles.headerTitle}>{user.name}</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.headerButton}>
+            <Ionicons name="add-outline" size={24} color={Colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.headerButton}>
+            <Ionicons name="menu-outline" size={24} color={Colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.headerButton} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={24} color={Colors.text} />
+          </TouchableOpacity>
         </View>
       </View>
 
-      <View style={styles.postsSection}>
-        <Text style={styles.sectionTitle}>My Posts</Text>
+      {viewMode === 'grid' ? (
         <FlatList
+          key="grid"
+          data={userPosts}
+          keyExtractor={(item) => item._id}
+          renderItem={renderGridItem}
+          numColumns={3}
+          ListHeaderComponent={renderProfileHeader}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.gridContainer}
+        />
+      ) : (
+        <FlatList
+          key="list"
           data={userPosts}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => <PostCard post={item} />}
+          ListHeaderComponent={renderProfileHeader}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No posts yet</Text>
-              <Text style={styles.emptySubtext}>Share your first post!</Text>
-            </View>
-          }
         />
-      </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -120,90 +245,191 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 15,
-    backgroundColor: '#fff',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#007AFF',
+  headerTitle: {
+    ...Typography.h3,
+    color: Colors.text,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerButton: {
+    padding: Spacing.sm,
+    marginLeft: Spacing.md,
+  },
+  profileHeader: {
+    backgroundColor: Colors.surface,
+    paddingBottom: Spacing.lg,
   },
   profileInfo: {
-    backgroundColor: '#fff',
-    padding: 20,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  avatarSection: {
+    marginRight: Spacing.xl,
+  },
+  avatarGradient: {
+    width: 88,
+    height: 88,
+    borderRadius: BorderRadius.full,
+    padding: 3,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#007AFF',
+    width: 82,
+    height: 82,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 15,
+  },
+  avatarImage: {
+    width: 82,
+    height: 82,
+    borderRadius: BorderRadius.full,
   },
   avatarText: {
-    color: '#fff',
-    fontSize: 32,
-    fontWeight: 'bold',
+    ...Typography.h1,
+    color: Colors.text,
   },
-  userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  userEmail: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
-  },
-  stats: {
+  statsSection: {
     flexDirection: 'row',
+    flex: 1,
+    justifyContent: 'space-around',
   },
   statItem: {
     alignItems: 'center',
-    marginHorizontal: 20,
   },
   statNumber: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    ...Typography.h3,
+    color: Colors.text,
   },
   statLabel: {
-    fontSize: 14,
-    color: '#666',
+    ...Typography.caption,
+    color: Colors.textSecondary,
     marginTop: 2,
   },
-  postsSection: {
+  userDetails: {
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  userName: {
+    ...Typography.bodyMedium,
+    color: Colors.text,
+    marginBottom: Spacing.sm,
+  },
+  userBio: {
+    ...Typography.body,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  editButton: {
     flex: 1,
-    padding: 15,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  emptyState: {
+    backgroundColor: Colors.surfaceLight,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.sm,
     alignItems: 'center',
-    marginTop: 50,
+    marginRight: Spacing.md,
   },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#666',
+  editButtonText: {
+    ...Typography.bodyMedium,
+    color: Colors.text,
   },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 5,
+  shareButton: {
+    backgroundColor: Colors.surfaceLight,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    alignItems: 'center',
+  },
+  highlights: {
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  highlightsTitle: {
+    ...Typography.captionMedium,
+    color: Colors.text,
+    marginBottom: Spacing.md,
+  },
+  highlightsList: {
+    flexDirection: 'row',
+  },
+  highlightItem: {
+    alignItems: 'center',
+    marginRight: Spacing.lg,
+    width: 70,
+  },
+  highlightCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.surfaceLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+    borderWidth: 2,
+    borderColor: Colors.border,
+  },
+  highlightLabel: {
+    ...Typography.small,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  viewToggle: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: Spacing.lg,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  toggleButtonActive: {
+    borderBottomColor: Colors.primary,
+  },
+  gridContainer: {
+    paddingBottom: Spacing.xl,
+  },
+  gridItem: {
+    width: (width - 4) / 3,
+    height: (width - 4) / 3,
+    margin: 1,
+  },
+  gridImage: {
+    width: '100%',
+    height: '100%',
+  },
+  gridTextPost: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: Colors.surfaceLight,
+    padding: Spacing.sm,
+    justifyContent: 'center',
+  },
+  gridText: {
+    ...Typography.small,
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
 });
