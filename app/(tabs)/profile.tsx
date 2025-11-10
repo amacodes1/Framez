@@ -9,6 +9,7 @@ import {
   StatusBar,
   Dimensions,
   Image,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
@@ -70,6 +71,18 @@ export default function Profile() {
       Alert.alert('Success', 'Post created successfully! 🎉');
     } catch {
       Alert.alert('Error', 'Failed to create post');
+    }
+  };
+
+  const handleShareProfile = async () => {
+    try {
+      await Share.share({
+        message: `Check out ${currentUser?.name}'s profile on Framez!\n\n${userPosts.length} posts • ${followersCount} followers • ${followingCount} following\n\nhttps://framez.app/profile/${currentUser?._id}`,
+        title: 'Share Profile',
+        url: `https://framez.app/profile/${currentUser?._id}`,
+      });
+    } catch {
+      Alert.alert('Error', 'Failed to share profile');
     }
   };
 
@@ -156,7 +169,7 @@ export default function Profile() {
         <TouchableOpacity style={styles.editButton} onPress={() => setShowEditProfile(true)}>
           <Text style={styles.editButtonText}>Edit Profile</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.shareButton}>
+        <TouchableOpacity style={styles.shareButton} onPress={handleShareProfile}>
           <Ionicons name="share-outline" size={20} color={Colors.text} />
         </TouchableOpacity>
       </View>

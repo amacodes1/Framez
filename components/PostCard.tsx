@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
   Alert,
+  Share,
 } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, Typography } from '../constants/theme';
@@ -104,6 +105,18 @@ export const PostCard: React.FC<PostCardProps> = React.memo(({ post }) => {
     }
   };
 
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `Check out this post by ${post.author.name} on Framez:\n\n${post.content}\n\nhttps://framez.app/post/${post._id}`,
+        title: 'Share Post',
+        url: `https://framez.app/post/${post._id}`,
+      });
+    } catch {
+      Alert.alert('Error', 'Failed to share post');
+    }
+  };
+
   const handleMoreOptions = () => {
     if (isOwnPost) {
       Alert.alert(
@@ -175,7 +188,7 @@ export const PostCard: React.FC<PostCardProps> = React.memo(({ post }) => {
           <TouchableOpacity style={styles.actionButton}>
             <Ionicons name="chatbubble-outline" size={22} color={Colors.textSecondary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
             <Ionicons name="paper-plane-outline" size={22} color={Colors.textSecondary} />
           </TouchableOpacity>
         </View>
