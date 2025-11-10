@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { setUser } from '../store/authSlice';
 import { AuthService } from '../services/auth';
+import { useCheckEmailExists } from '../services/convex';
+import { validateEmail, validatePassword } from '../utils/validation';
 import { Colors, Spacing, BorderRadius, Typography, Shadows } from '../constants/theme';
 
 const { width } = Dimensions.get('window');
@@ -29,9 +31,20 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   
   const dispatch = useDispatch();
   const router = useRouter();
+  const emailExists = useCheckEmailExists(email);
+  
+  useEffect(() => {
+    if (!isLogin && password) {
+      const validation = validatePassword(password);
+      setPasswordErrors(validation.errors);
+    } else {
+      setPasswordErrors([]);
+    }
+  }, [password, isLogin]);
 
   const handleSubmit = async () => {
     if (!email || !password || (!isLogin && !name)) {
@@ -39,9 +52,27 @@ export default function Auth() {
       return;
     }
 
-    if (!isLogin && password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+    if (!validateEmail(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
       return;
+    }
+
+    if (!isLogin) {
+      if (emailExists) {
+        Alert.alert('Error', 'This email is already registered');
+        return;
+      }
+      
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.isValid) {
+        Alert.alert('Error', 'Password must meet all requirements');
+        return;
+      }
+      
+      if (password !== confirmPassword) {
+        Alert.alert('Error', 'Passwords do not match');
+        return;
+      }
     }
 
     setLoading(true);
@@ -143,27 +174,38 @@ export default function Auth() {
             </View>
 
             {!isLogin && (
-              <View style={styles.inputContainer}>
-                <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
-                <TextInput
-                  style={[styles.input, styles.passwordInput]}
-                  placeholder="Confirm Password"
-                  placeholderTextColor={Colors.textMuted}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry={!showConfirmPassword}
-                />
-                <TouchableOpacity 
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  style={styles.eyeIcon}
-                >
-                  <Ionicons 
-                    name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} 
-                    size={20} 
-                    color={Colors.textMuted} 
+              <>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.input, styles.passwordInput]}
+                    placeholder="Confirm Password"
+                    placeholderTextColor={Colors.textMuted}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showConfirmPassword}
                   />
-                </TouchableOpacity>
-              </View>
+                  <TouchableOpacity 
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={styles.eyeIcon}
+                  >
+                    <Ionicons 
+                      name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} 
+                      size={20} 
+                      color={Colors.textMuted} 
+                    />
+                  </TouchableOpacity>
+                </View>
+                
+                {passwordErrors.length > 0 && (
+                  <View style={styles.passwordRequirements}>
+                    <Text style={styles.requirementsTitle}>Password must have:</Text>
+                    {passwordErrors.map((error, index) => (
+                      <Text key={index} style={styles.requirementText}>• {error}</Text>
+                    ))}
+                  </View>
+                )}
+              </>
             )}
 
             <TouchableOpacity
@@ -312,6 +354,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: Spacing.xxxl,
   },
   switchText: {
     ...Typography.body,
@@ -321,5 +364,22 @@ const styles = StyleSheet.create({
   switchButton: {
     ...Typography.bodyMedium,
     color: Colors.primary,
+  },
+  passwordRequirements: {
+    backgroundColor: Colors.surfaceLight,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.lg,
+  },
+  requirementsTitle: {
+    ...Typography.caption,
+    color: Colors.text,
+    marginBottom: Spacing.xs,
+    fontWeight: '600',
+  },
+  requirementText: {
+    ...Typography.small,
+    color: Colors.textMuted,
+    marginBottom: 2,
   },
 });

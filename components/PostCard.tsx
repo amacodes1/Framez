@@ -34,9 +34,9 @@ interface PostCardProps {
 
 const { width } = Dimensions.get('window');
 
-export const PostCard: React.FC<PostCardProps> = ({ post }) => {
+export const PostCard: React.FC<PostCardProps> = React.memo(({ post }) => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const currentUser = useGetCurrentUser(user?.id || '');
+  const currentUser = useGetCurrentUser(user?.clerkId || '');
   const [bookmarked, setBookmarked] = useState(false);
   const [showEditPost, setShowEditPost] = useState(false);
   
@@ -200,7 +200,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       />
     </View>
   );
-};
+});
+
+PostCard.displayName = 'PostCard';
 
 const styles = StyleSheet.create({
   container: {

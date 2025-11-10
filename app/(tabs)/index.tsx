@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { PostCard } from '../../components/PostCard';
 import { CreatePost } from '../../components/CreatePost';
+import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { Colors, Spacing, BorderRadius, Typography, Shadows } from '../../constants/theme';
 import { useGetAllPosts, useCreatePost, useGetCurrentUser } from '../../services/convex';
 import { useSelector } from 'react-redux';
@@ -21,11 +22,13 @@ import { RootState } from '../../store';
 
 export default function Feed() {
   const { user } = useSelector((state: RootState) => state.auth);
-  const posts = useGetAllPosts() || [];
+  const posts = useGetAllPosts();
   const createPost = useCreatePost();
-  const currentUser = useGetCurrentUser(user?.id || '');
+  const currentUser = useGetCurrentUser(user?.clerkId || '');
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  
+  const isLoading = posts === undefined;
 
   const handleCreatePost = async (content: string, image?: string) => {
     if (!currentUser?._id) {
@@ -59,7 +62,7 @@ export default function Feed() {
 
   const renderHeader = () => (
     <View style={styles.storiesContainer}>
-      <Text style={styles.storiesTitle}>Stories</Text>
+      <Text style={styles.storiesTitle}>Active Users</Text>
       <View style={styles.storiesRow}>
         {/* Your story */}
         <TouchableOpacity style={styles.storyItem}>
@@ -74,15 +77,15 @@ export default function Feed() {
           <Text style={styles.storyLabel}>Your Story</Text>
         </TouchableOpacity>
 
-        {/* Mock stories */}
-        {['Emma', 'Alex', 'Mike', 'Sarah'].map((name, index) => (
+        {/* Recent users */}
+        {posts?.slice(0, 4).map((post, index) => (
           <TouchableOpacity key={index} style={styles.storyItem}>
             <View style={styles.storyRing}>
               <View style={styles.storyAvatar}>
-                <Text style={styles.storyAvatarText}>{name[0]}</Text>
+                <Text style={styles.storyAvatarText}>{post.author?.name?.[0] || '?'}</Text>
               </View>
             </View>
-            <Text style={styles.storyLabel}>{name}</Text>
+            <Text style={styles.storyLabel}>{post.author?.name?.split(' ')[0] || 'User'}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -114,35 +117,55 @@ export default function Feed() {
         </View>
       </View>
 
-      <FlatList
-        data={posts.filter(post => post.author).map(post => ({
-          ...post,
-          author: {
-            name: post.author!.name,
-            avatar: post.author!.avatar
+      {isLoading ? (
+        <FlatList
+          data={[1]}
+          keyExtractor={() => 'skeleton'}
+          renderItem={() => <SkeletonLoader count={5} />}
+          ListHeaderComponent={renderHeader}
+          showsVerticalScrollIndicator={false}
+          style={styles.feed}
+        />
+      ) : (
+        <FlatList
+          data={posts.filter(post => post.author).map(post => ({
+            ...post,
+            author: {
+              name: post.author!.name,
+              avatar: post.author!.avatar
+            }
+          }))}
+          keyExtractor={(item) => item._id}
+          renderItem={({ item }) => <PostCard post={item} />}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Ionicons name="images-outline" size={64} color={Colors.textMuted} />
+              <Text style={styles.emptyTitle}>No posts yet</Text>
+              <Text style={styles.emptySubtitle}>Be the first to share something!</Text>
+            </View>
           }
-        }))}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <PostCard post={item} />}
-        ListHeaderComponent={renderHeader}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Ionicons name="images-outline" size={64} color={Colors.textMuted} />
-            <Text style={styles.emptyTitle}>No posts yet</Text>
-            <Text style={styles.emptySubtitle}>Be the first to share something!</Text>
-          </View>
-        }
-        refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh}
-            tintColor={Colors.primary}
-            colors={[Colors.primary]}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-        style={styles.feed}
-      />
+          refreshControl={
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={onRefresh}
+              tintColor={Colors.primary}
+              colors={[Colors.primary]}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+          style={styles.feed}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={5}
+          updateCellsBatchingPeriod={100}
+          windowSize={10}
+          getItemLayout={(data, index) => ({
+            length: 400,
+            offset: 400 * index,
+            index,
+          })}
+        />
+      )}
 
       {/* Floating Action Button */}
       <TouchableOpacity

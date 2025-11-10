@@ -6,6 +6,7 @@ import { Id } from "../convex/_generated/dataModel";
 export const useCreateUser = () => useMutation(api.users.createUser);
 export const useGetCurrentUser = (clerkId: string) => useQuery(api.users.getCurrentUser, clerkId ? { clerkId } : "skip");
 export const useUpdateUser = () => useMutation(api.users.updateUser);
+export const useCheckEmailExists = (email: string) => useQuery(api.users.checkEmailExists, email ? { email } : "skip");
 
 // Post hooks
 export const useCreatePost = () => useMutation(api.posts.createPost);
@@ -23,3 +24,13 @@ export const useToggleLike = () => useMutation(api.likes.toggleLike);
 export const useGetPostLikes = (postId: Id<"posts">) => useQuery(api.likes.getPostLikes, { postId });
 export const useIsPostLiked = (userId: Id<"users"> | undefined, postId: Id<"posts">) => 
   useQuery(api.likes.isPostLiked, userId ? { userId, postId } : "skip");
+
+// Activity hooks
+export const useGetUserActivity = (userId: Id<"users"> | undefined) => 
+  useQuery(api.activity.getUserActivity, userId ? { userId } : "skip");
+
+// Follow hooks
+export const useGetFollowersCount = (userId: Id<"users"> | undefined) => 
+  useQuery(api.follows.getFollowersCount, userId ? { userId } : "skip");
+export const useGetFollowingCount = (userId: Id<"users"> | undefined) => 
+  useQuery(api.follows.getFollowingCount, userId ? { userId } : "skip");

@@ -47,6 +47,17 @@ export const getCurrentUser = query({
   },
 });
 
+export const checkEmailExists = query({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .first();
+    return !!user;
+  },
+});
+
 export const updateUser = mutation({
   args: {
     userId: v.id("users"),

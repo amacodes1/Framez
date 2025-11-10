@@ -10,53 +10,34 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
+import { useGetUserActivity, useGetCurrentUser } from '../../services/convex';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
 
-const mockActivities = [
-  {
-    id: '1',
-    type: 'like',
-    user: 'sarah_j',
-    avatar: 'https://picsum.photos/100/100?random=20',
-    time: '2m',
-    postImage: 'https://picsum.photos/200/200?random=21',
-  },
-  {
-    id: '2',
-    type: 'follow',
-    user: 'mike_dev',
-    avatar: 'https://picsum.photos/100/100?random=22',
-    time: '5m',
-  },
-  {
-    id: '3',
-    type: 'comment',
-    user: 'emma_wilson',
-    avatar: 'https://picsum.photos/100/100?random=23',
-    time: '10m',
-    comment: 'Amazing shot! 📸',
-    postImage: 'https://picsum.photos/200/200?random=24',
-  },
-  {
-    id: '4',
-    type: 'like',
-    user: 'alex_chen',
-    avatar: 'https://picsum.photos/100/100?random=25',
-    time: '1h',
-    postImage: 'https://picsum.photos/200/200?random=26',
-  },
-];
+const formatTime = (timestamp: number) => {
+  const now = Date.now();
+  const diff = now - timestamp;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 1) return 'now';
+  if (minutes < 60) return `${minutes}m`;
+  if (hours < 24) return `${hours}h`;
+  return `${days}d`;
+};
 
 export default function Activity() {
+  const { user } = useSelector((state: RootState) => state.auth);
+  const currentUser = useGetCurrentUser(user?.clerkId || '');
+  const activities = useGetUserActivity(currentUser?._id);
+
   const renderActivityItem = ({ item }: { item: any }) => {
     const getActivityText = () => {
       switch (item.type) {
         case 'like':
           return 'liked your post';
-        case 'follow':
-          return 'started following you';
-        case 'comment':
-          return `commented: ${item.comment}`;
         default:
           return '';
       }
@@ -66,10 +47,6 @@ export default function Activity() {
       switch (item.type) {
         case 'like':
           return <Ionicons name="heart" size={16} color={Colors.like} />;
-        case 'follow':
-          return <Ionicons name="person-add" size={16} color={Colors.secondary} />;
-        case 'comment':
-          return <Ionicons name="chatbubble" size={16} color={Colors.textMuted} />;
         default:
           return null;
       }
@@ -78,7 +55,9 @@ export default function Activity() {
     return (
       <TouchableOpacity style={styles.activityItem}>
         <View style={styles.activityLeft}>
-          <Image source={{ uri: item.avatar }} style={styles.activityAvatar} />
+          <View style={styles.activityAvatar}>
+            <Text style={styles.avatarText}>{item.user?.name?.[0] || '?'}</Text>
+          </View>
           <View style={styles.activityIconContainer}>
             {getActivityIcon()}
           </View>
@@ -86,20 +65,16 @@ export default function Activity() {
         
         <View style={styles.activityContent}>
           <Text style={styles.activityText}>
-            <Text style={styles.username}>{item.user}</Text>
+            <Text style={styles.username}>
+              {item.user?._id === currentUser?._id ? 'You' : (item.user?.name || 'Unknown')}
+            </Text>
             <Text style={styles.actionText}> {getActivityText()}</Text>
           </Text>
-          <Text style={styles.timeText}>{item.time}</Text>
+          <Text style={styles.timeText}>{formatTime(item.createdAt)}</Text>
         </View>
 
-        {item.postImage && (
-          <Image source={{ uri: item.postImage }} style={styles.postThumbnail} />
-        )}
-
-        {item.type === 'follow' && (
-          <TouchableOpacity style={styles.followButton}>
-            <Text style={styles.followButtonText}>Follow</Text>
-          </TouchableOpacity>
+        {item.post?.image && (
+          <Image source={{ uri: item.post.image }} style={styles.postThumbnail} />
         )}
       </TouchableOpacity>
     );
@@ -116,11 +91,18 @@ export default function Activity() {
 
       {/* Activity List */}
       <FlatList
-        data={mockActivities}
+        data={activities || []}
         keyExtractor={(item) => item.id}
         renderItem={renderActivityItem}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Ionicons name="notifications-outline" size={64} color={Colors.textMuted} />
+            <Text style={styles.emptyTitle}>No activity yet</Text>
+            <Text style={styles.emptySubtitle}>When people interact with your posts, you'll see it here</Text>
+          </View>
+        }
       />
     </SafeAreaView>
   );
@@ -158,6 +140,13 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: BorderRadius.full,
+    backgroundColor: Colors.surfaceLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    ...Typography.bodyMedium,
+    color: Colors.text,
   },
   activityIconContainer: {
     position: 'absolute',
@@ -201,5 +190,21 @@ const styles = StyleSheet.create({
   followButtonText: {
     ...Typography.captionMedium,
     color: Colors.text,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: Spacing.xxxl * 2,
+    paddingHorizontal: Spacing.xl,
+  },
+  emptyTitle: {
+    ...Typography.h3,
+    color: Colors.text,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+  emptySubtitle: {
+    ...Typography.body,
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
 });

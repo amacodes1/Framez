@@ -19,8 +19,9 @@ import { RootState } from '../../store';
 import { clearUser } from '../../store/authSlice';
 import { AuthService } from '../../services/auth';
 import { PostCard } from '../../components/PostCard';
-import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
-import { useGetCurrentUser, useGetUserPosts, useUpdateUser } from '../../services/convex';
+import { CreatePost } from '../../components/CreatePost';
+import { Colors, Spacing, BorderRadius, Typography, Shadows } from '../../constants/theme';
+import { useGetCurrentUser, useGetUserPosts, useUpdateUser, useGetFollowersCount, useGetFollowingCount, useCreatePost } from '../../services/convex';
 import { EditProfile } from '../../components/EditProfile';
 
 const { width } = Dimensions.get('window');
@@ -28,13 +29,17 @@ const { width } = Dimensions.get('window');
 
 export default function Profile() {
   const { user } = useSelector((state: RootState) => state.auth);
-  const currentUser = useGetCurrentUser(user?.id || '');
+  const currentUser = useGetCurrentUser(user?.clerkId || '');
   const userPosts = useGetUserPosts(currentUser?._id) || [];
+  const followersCount = useGetFollowersCount(currentUser?._id) || 0;
+  const followingCount = useGetFollowingCount(currentUser?._id) || 0;
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showCreatePost, setShowCreatePost] = useState(false);
   const dispatch = useDispatch();
   const router = useRouter();
   const updateUser = useUpdateUser();
+  const createPost = useCreatePost();
 
   const handleEditProfile = async (name: string, email: string, avatar?: string, bio?: string) => {
     if (!currentUser?._id) return;
@@ -50,6 +55,21 @@ export default function Profile() {
       Alert.alert('Success', 'Profile updated successfully! ✨');
     } catch {
       Alert.alert('Error', 'Failed to update profile');
+    }
+  };
+
+  const handleCreatePost = async (content: string, image?: string) => {
+    if (!currentUser?._id) return;
+    
+    try {
+      await createPost({
+        userId: currentUser._id,
+        content,
+        ...(image && { image }),
+      });
+      Alert.alert('Success', 'Post created successfully! 🎉');
+    } catch {
+      Alert.alert('Error', 'Failed to create post');
     }
   };
 
@@ -111,11 +131,11 @@ export default function Profile() {
             <Text style={styles.statLabel}>Posts</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>1.2K</Text>
+            <Text style={styles.statNumber}>{followersCount}</Text>
             <Text style={styles.statLabel}>Followers</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>856</Text>
+            <Text style={styles.statNumber}>{followingCount}</Text>
             <Text style={styles.statLabel}>Following</Text>
           </View>
         </View>
@@ -252,6 +272,19 @@ export default function Profile() {
         />
       )}
       
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => setShowCreatePost(true)}
+      >
+        <LinearGradient
+          colors={[Colors.gradientStart, Colors.gradientMiddle, Colors.gradientEnd]}
+          style={styles.fabGradient}
+        >
+          <Ionicons name="add" size={28} color={Colors.text} />
+        </LinearGradient>
+      </TouchableOpacity>
+      
       <EditProfile
         visible={showEditProfile}
         onClose={() => setShowEditProfile(false)}
@@ -260,6 +293,12 @@ export default function Profile() {
         initialEmail={currentUser?.email || ''}
         initialAvatar={currentUser?.avatar}
         initialBio={currentUser?.bio}
+      />
+      
+      <CreatePost
+        visible={showCreatePost}
+        onClose={() => setShowCreatePost(false)}
+        onSubmit={handleCreatePost}
       />
     </SafeAreaView>
   );
@@ -476,5 +515,21 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: Colors.textSecondary,
     textAlign: 'center',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: Spacing.xl,
+    right: Spacing.xl,
+    width: 56,
+    height: 56,
+    borderRadius: BorderRadius.full,
+    ...Shadows.large,
+  },
+  fabGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: BorderRadius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
