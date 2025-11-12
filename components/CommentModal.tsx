@@ -37,7 +37,7 @@ export default function CommentModal({ visible, onClose, postId }: CommentModalP
     setComment('');
   };
 
-  const CommentItem = ({ item }: { item: any }) => {
+  const CommentItem = React.memo(({ item }: { item: any }) => {
     const likesCount = useGetCommentLikes(item._id) || 0;
     const isLiked = useIsCommentLiked(currentUser?._id, item._id) || false;
     const isOwnComment = currentUser?._id === item.userId;
@@ -103,7 +103,9 @@ export default function CommentModal({ visible, onClose, postId }: CommentModalP
         </View>
       </View>
     );
-  };
+  });
+  
+  CommentItem.displayName = 'CommentItem';
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">

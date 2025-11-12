@@ -10,6 +10,10 @@ Framez is a modern social media mobile application built with React Native and E
 - **Profile**: View user information and personal posts
 - **Real-time Updates**: Refresh feed to see latest posts
 - **Image Upload**: Add photos to posts using device camera or gallery
+- **Social Interactions**: Like, comment, and share posts with real-time counts
+- **Comment System**: Full comment functionality with likes and deletion
+- **Follow System**: Follow/unfollow users and view follower counts
+- **User Profiles**: Visit other users' profiles and view their posts
 
 ## Tech Stack 🛠️
 
@@ -57,6 +61,11 @@ The app is fully integrated with Convex for real-time data management:
 ### Database Schema
 - **Users**: Store user profiles with authentication
 - **Posts**: Store user posts with content and images
+- **Likes**: Track post likes with user associations
+- **Comments**: Store post comments with user data
+- **CommentLikes**: Track likes on individual comments
+- **Follows**: Manage user follow relationships
+- **Shares**: Track post sharing activity
 
 ### API Functions
 - `users.createUser`: Create new user profiles
@@ -64,6 +73,11 @@ The app is fully integrated with Convex for real-time data management:
 - `posts.createPost`: Create new posts
 - `posts.getAllPosts`: Get all posts for feed
 - `posts.getUserPosts`: Get posts by specific user
+- `likes.toggleLike`: Like/unlike posts
+- `comments.createComment`: Add comments to posts
+- `comments.toggleCommentLike`: Like/unlike comments
+- `follows.followUser`: Follow/unfollow users
+- `shares.sharePost`: Track post shares
 
 ### Environment Variables
 Update `.env.local` with your Convex deployment URL:
@@ -93,8 +107,16 @@ Framez/
 │   ├── schema.ts          # Database schema
 │   ├── users.ts           # User operations
 │   ├── posts.ts           # Post operations
+│   ├── comments.ts        # Comment operations
+│   ├── likes.ts           # Like operations
+│   ├── follows.ts         # Follow operations
+│   ├── shares.ts          # Share operations
 │   ├── auth.ts            # Authentication functions
 │   └── http.ts            # HTTP router
+├── utils/                 # Utility functions
+│   ├── imageUtils.ts      # Image processing utilities
+│   ├── helpers.ts         # General helper functions
+│   └── validation.ts      # Validation utilities
 └── constants/             # App constants and theme
     └── theme.ts           # Color and styling constants
 ```
@@ -109,14 +131,30 @@ Framez/
 
 ### Posts
 - Create posts with text and optional images
-- Image picker integration for photo uploads
+- Image picker integration with base64 conversion
 - Real-time feed updates via Convex
-- User-specific post filtering
+- Like, comment, and share functionality
+- Action counts displayed next to icons
+
+### Comments
+- Full comment system with real-time updates
+- Like individual comments
+- Delete own comments with confirmation
+- Keyboard-aware input positioning
+- Performance optimized with React.memo
+
+### Social Features
+- Follow/unfollow users
+- View follower and following counts
+- Visit other users' profiles
+- Share posts with native share dialog
+- Real-time interaction counts
 
 ### Profile
 - User information display
 - Personal post history from Convex
-- Post count statistics
+- Post, follower, and following statistics
+- Follow/unfollow functionality
 - Logout functionality
 
 ## Testing 📱
