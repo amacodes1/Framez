@@ -17,6 +17,7 @@ import type * as likes from "../likes.js";
 import type * as posts from "../posts.js";
 import type * as search from "../search.js";
 import type * as seedData from "../seedData.js";
+import type * as shares from "../shares.js";
 import type * as users from "../users.js";
 
 import type {
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   posts: typeof posts;
   search: typeof search;
   seedData: typeof seedData;
+  shares: typeof shares;
   users: typeof users;
 }>;
 declare const fullApiWithMounts: typeof fullApi;

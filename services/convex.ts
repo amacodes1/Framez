@@ -39,3 +39,8 @@ export const useGetFollowCounts = (userId: Id<"users"> | undefined) =>
 // Comment hooks
 export const useGetCommentCount = (postId: Id<"posts">) => 
   useQuery(api.comments.getCommentCount, { postId });
+
+// Share hooks
+export const useSharePost = () => useMutation(api.shares.sharePost);
+export const useGetShareCount = (postId: Id<"posts">) => 
+  useQuery(api.shares.getShareCount, { postId });

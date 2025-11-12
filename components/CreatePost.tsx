@@ -15,6 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, Typography, Shadows } from '../constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { convertImageToBase64 } from '../utils/imageUtils';
 
 interface CreatePostProps {
   visible: boolean;
@@ -44,7 +45,13 @@ export const CreatePost: React.FC<CreatePostProps> = ({ visible, onClose, onSubm
     });
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      try {
+        const base64Image = await convertImageToBase64(result.assets[0].uri);
+        setImage(base64Image);
+      } catch (error) {
+        console.error('Error converting image:', error);
+        setImage(result.assets[0].uri);
+      }
     }
   };
 
@@ -62,7 +69,13 @@ export const CreatePost: React.FC<CreatePostProps> = ({ visible, onClose, onSubm
     });
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      try {
+        const base64Image = await convertImageToBase64(result.assets[0].uri);
+        setImage(base64Image);
+      } catch (error) {
+        console.error('Error converting image:', error);
+        setImage(result.assets[0].uri);
+      }
     }
   };
 
@@ -74,14 +87,17 @@ export const CreatePost: React.FC<CreatePostProps> = ({ visible, onClose, onSubm
 
     setIsPosting(true);
     
-    // Simulate posting delay
-    setTimeout(() => {
+    try {
       onSubmit(content, image || undefined);
       setContent('');
       setImage(null);
       setIsPosting(false);
       onClose();
-    }, 1000);
+    } catch (error) {
+      console.error('Error posting:', error);
+      Alert.alert('Error', 'Failed to create post');
+      setIsPosting(false);
+    }
   };
 
   const handleClose = () => {

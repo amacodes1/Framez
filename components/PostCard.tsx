@@ -12,13 +12,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, Typography } from '../constants/theme';
 import { formatTimestamp } from '../utils/helpers';
-import { useToggleLike, useGetPostLikes, useIsPostLiked, useGetCurrentUser, useDeletePost, useEditPost, useGetCommentCount } from '../services/convex';
+import { useToggleLike, useGetPostLikes, useIsPostLiked, useGetCurrentUser, useDeletePost, useEditPost, useGetCommentCount, useSharePost, useGetShareCount } from '../services/convex';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { Id } from '../convex/_generated/dataModel';
 import { EditPost } from './EditPost';
 import CommentModal from './CommentModal';
 import { router } from 'expo-router';
+import { isValidImageUri } from '../utils/imageUtils';
 
 interface Post {
   _id: Id<"posts">;
@@ -47,9 +48,11 @@ export const PostCard: React.FC<PostCardProps> = React.memo(({ post }) => {
   const toggleLike = useToggleLike();
   const deletePost = useDeletePost();
   const editPost = useEditPost();
+  const sharePost = useSharePost();
   const likesCount = useGetPostLikes(post._id) || 0;
   const isLiked = useIsPostLiked(currentUser?._id, post._id) || false;
   const commentCount = useGetCommentCount(post._id) || 0;
+  const shareCount = useGetShareCount(post._id) || 0;
   
   const isOwnPost = currentUser?.clerkId === post.author.name || currentUser?.name === post.author.name;
 
@@ -110,7 +113,16 @@ export const PostCard: React.FC<PostCardProps> = React.memo(({ post }) => {
   };
 
   const handleShare = async () => {
+    if (!currentUser?._id) return;
+    
     try {
+      // Track the share in database
+      await sharePost({
+        postId: post._id,
+        userId: currentUser._id,
+      });
+      
+      // Share via native share dialog
       await Share.share({
         message: `Check out this post by ${post.author?.name || 'Unknown User'} on Framez:\n\n${post.content}\n\nhttps://framez.app/post/${post._id}`,
         title: 'Share Post',
@@ -187,9 +199,17 @@ export const PostCard: React.FC<PostCardProps> = React.memo(({ post }) => {
       )}
       
       {/* Image */}
-      {post.image && (
+      {post.image && isValidImageUri(post.image) && (
         <View style={styles.imageContainer}>
-          <Image source={{ uri: post.image }} style={styles.postImage} />
+          <Image 
+            source={{ uri: post.image }} 
+            style={styles.postImage}
+            onError={(error) => {
+              console.log('Image load error for URI:', post.image);
+              console.log('Error details:', error.nativeEvent.error);
+            }}
+            resizeMode="cover"
+          />
         </View>
       )}
 
@@ -197,17 +217,26 @@ export const PostCard: React.FC<PostCardProps> = React.memo(({ post }) => {
       <View style={styles.actions}>
         <View style={styles.leftActions}>
           <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
-            <Ionicons 
-              name={isLiked ? "heart" : "heart-outline"} 
-              size={24} 
-              color={isLiked ? Colors.like : Colors.textSecondary} 
-            />
+            <View style={styles.actionWithCount}>
+              <Ionicons 
+                name={isLiked ? "heart" : "heart-outline"} 
+                size={24} 
+                color={isLiked ? Colors.like : Colors.textSecondary} 
+              />
+              {likesCount > 0 && <Text style={styles.actionCount}>{likesCount}</Text>}
+            </View>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={() => setShowComments(true)}>
-            <Ionicons name="chatbubble-outline" size={22} color={Colors.textSecondary} />
+            <View style={styles.actionWithCount}>
+              <Ionicons name="chatbubble-outline" size={22} color={Colors.textSecondary} />
+              {commentCount > 0 && <Text style={styles.actionCount}>{commentCount}</Text>}
+            </View>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-            <Ionicons name="paper-plane-outline" size={22} color={Colors.textSecondary} />
+            <View style={styles.actionWithCount}>
+              <Ionicons name="paper-plane-outline" size={22} color={Colors.textSecondary} />
+              {shareCount > 0 && <Text style={styles.actionCount}>{shareCount}</Text>}
+            </View>
           </TouchableOpacity>
         </View>
         <TouchableOpacity onPress={() => setBookmarked(!bookmarked)}>
@@ -218,9 +247,6 @@ export const PostCard: React.FC<PostCardProps> = React.memo(({ post }) => {
           />
         </TouchableOpacity>
       </View>
-
-      {/* Likes count */}
-      <Text style={styles.likesCount}>{likesCount.toLocaleString()} likes</Text>
       
       <EditPost
         visible={showEditPost}
@@ -335,9 +361,14 @@ const styles = StyleSheet.create({
     marginRight: Spacing.lg,
     padding: Spacing.xs,
   },
-  likesCount: {
-    ...Typography.captionMedium,
-    color: Colors.text,
-    paddingHorizontal: Spacing.lg,
+  actionWithCount: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionCount: {
+    ...Typography.small,
+    color: Colors.textSecondary,
+    marginLeft: 4,
+    fontSize: 12,
   },
 });

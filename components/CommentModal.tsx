@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, FlatList, Image } from 'react-native';
+import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, FlatList, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
@@ -66,25 +66,31 @@ export default function CommentModal({ visible, onClose, postId }: CommentModalP
           renderItem={renderComment}
           keyExtractor={(item) => item._id}
           style={styles.commentsList}
+          keyboardShouldPersistTaps="handled"
         />
 
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Add a comment..."
-            placeholderTextColor={Colors.textMuted}
-            value={comment}
-            onChangeText={setComment}
-            multiline
-          />
-          <TouchableOpacity
-            style={[styles.sendButton, !comment.trim() && styles.sendButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={!comment.trim()}
-          >
-            <Ionicons name="send" size={20} color={comment.trim() ? Colors.primary : Colors.textMuted} />
-          </TouchableOpacity>
-        </View>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
+        >
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Add a comment..."
+              placeholderTextColor={Colors.textMuted}
+              value={comment}
+              onChangeText={setComment}
+              multiline
+            />
+            <TouchableOpacity
+              style={[styles.sendButton, !comment.trim() && styles.sendButtonDisabled]}
+              onPress={handleSubmit}
+              disabled={!comment.trim()}
+            >
+              <Ionicons name="send" size={20} color={comment.trim() ? Colors.primary : Colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
