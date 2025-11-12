@@ -22,7 +22,9 @@ import { AuthService } from '../services/auth';
 import { PostCard } from '../components/PostCard';
 import { CreatePost } from '../components/CreatePost';
 import { Colors, Spacing, BorderRadius, Typography, Shadows } from '../constants/theme';
-import { useGetCurrentUser, useGetUserPosts, useUpdateUser, useGetFollowersCount, useGetFollowingCount, useCreatePost } from '../services/convex';
+import { useGetCurrentUser, useGetUserPosts, useUpdateUser, useCreatePost } from '../services/convex';
+import { useQuery } from 'convex/react';
+import { api } from '../convex/_generated/api';
 import { EditProfile } from '../components/EditProfile';
 
 const { width } = Dimensions.get('window');
@@ -31,8 +33,9 @@ export default function ProfileScreen() {
   const { user } = useSelector((state: RootState) => state.auth);
   const currentUser = useGetCurrentUser(user?.clerkId || '');
   const userPosts = useGetUserPosts(currentUser?._id) || [];
-  const followersCount = useGetFollowersCount(currentUser?._id) || 0;
-  const followingCount = useGetFollowingCount(currentUser?._id) || 0;
+  const followCounts = useQuery(api.follows.getFollowCounts, { userId: currentUser?._id || '' });
+  const followersCount = followCounts?.followers || 0;
+  const followingCount = followCounts?.following || 0;
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);

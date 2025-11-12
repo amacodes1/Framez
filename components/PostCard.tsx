@@ -12,11 +12,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, Typography } from '../constants/theme';
 import { formatTimestamp } from '../utils/helpers';
-import { useToggleLike, useGetPostLikes, useIsPostLiked, useGetCurrentUser, useDeletePost, useEditPost } from '../services/convex';
+import { useToggleLike, useGetPostLikes, useIsPostLiked, useGetCurrentUser, useDeletePost, useEditPost, useGetCommentCount } from '../services/convex';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { Id } from '../convex/_generated/dataModel';
 import { EditPost } from './EditPost';
+import CommentModal from './CommentModal';
+import { router } from 'expo-router';
 
 interface Post {
   _id: Id<"posts">;
@@ -40,12 +42,14 @@ export const PostCard: React.FC<PostCardProps> = React.memo(({ post }) => {
   const currentUser = useGetCurrentUser(user?.clerkId || '');
   const [bookmarked, setBookmarked] = useState(false);
   const [showEditPost, setShowEditPost] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   
   const toggleLike = useToggleLike();
   const deletePost = useDeletePost();
   const editPost = useEditPost();
   const likesCount = useGetPostLikes(post._id) || 0;
   const isLiked = useIsPostLiked(currentUser?._id, post._id) || false;
+  const commentCount = useGetCommentCount(post._id) || 0;
   
   const isOwnPost = currentUser?.clerkId === post.author.name || currentUser?.name === post.author.name;
 
@@ -108,7 +112,7 @@ export const PostCard: React.FC<PostCardProps> = React.memo(({ post }) => {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Check out this post by ${post.author.name} on Framez:\n\n${post.content}\n\nhttps://framez.app/post/${post._id}`,
+        message: `Check out this post by ${post.author?.name || 'Unknown User'} on Framez:\n\n${post.content}\n\nhttps://framez.app/post/${post._id}`,
         title: 'Share Post',
         url: `https://framez.app/post/${post._id}`,
       });
@@ -148,13 +152,27 @@ export const PostCard: React.FC<PostCardProps> = React.memo(({ post }) => {
               <Image source={{ uri: post.author.avatar }} style={styles.avatarImage} />
             ) : (
               <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarText}>{post.author.name.charAt(0).toUpperCase()}</Text>
+                <Text style={styles.avatarText}>{post.author?.name?.charAt(0).toUpperCase() || 'U'}</Text>
               </View>
             )}
             <View style={styles.storyRing} />
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.username}>{post.author.name}</Text>
+            <TouchableOpacity onPress={() => {
+              try {
+                if (post.author?.name) {
+                  if (currentUser?.name === post.author.name) {
+                    router.push('/(tabs)/profile' as any);
+                  } else {
+                    router.push(`/user/${post.author.name}` as any);
+                  }
+                }
+              } catch (error) {
+                console.log('Navigation error:', error);
+              }
+            }}>
+              <Text style={styles.username}>{post.author?.name || 'Unknown User'}</Text>
+            </TouchableOpacity>
             <Text style={styles.timestamp}>{formatTimestamp(post.createdAt)}</Text>
           </View>
         </View>
@@ -185,7 +203,7 @@ export const PostCard: React.FC<PostCardProps> = React.memo(({ post }) => {
               color={isLiked ? Colors.like : Colors.textSecondary} 
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => setShowComments(true)}>
             <Ionicons name="chatbubble-outline" size={22} color={Colors.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
@@ -210,6 +228,12 @@ export const PostCard: React.FC<PostCardProps> = React.memo(({ post }) => {
         onSubmit={handleEditPost}
         initialContent={post.content}
         initialImage={post.image}
+      />
+      
+      <CommentModal
+        visible={showComments}
+        onClose={() => setShowComments(false)}
+        postId={post._id}
       />
     </View>
   );

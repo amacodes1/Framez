@@ -30,7 +30,12 @@ export const useGetUserActivity = (userId: Id<"users"> | undefined) =>
   useQuery(api.activity.getUserActivity, userId ? { userId } : "skip");
 
 // Follow hooks
-export const useGetFollowersCount = (userId: Id<"users"> | undefined) => 
-  useQuery(api.follows.getFollowersCount, userId ? { userId } : "skip");
-export const useGetFollowingCount = (userId: Id<"users"> | undefined) => 
-  useQuery(api.follows.getFollowingCount, userId ? { userId } : "skip");
+export const useFollowUser = () => useMutation(api.follows.followUser);
+export const useIsFollowing = (followerId: Id<"users"> | undefined, followingId: Id<"users">) => 
+  useQuery(api.follows.isFollowing, followerId ? { followerId, followingId } : "skip");
+export const useGetFollowCounts = (userId: Id<"users"> | undefined) => 
+  useQuery(api.follows.getFollowCounts, userId ? { userId } : "skip");
+
+// Comment hooks
+export const useGetCommentCount = (postId: Id<"posts">) => 
+  useQuery(api.comments.getCommentCount, { postId });
