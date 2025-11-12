@@ -39,6 +39,12 @@ export const useGetFollowCounts = (userId: Id<"users"> | undefined) =>
 // Comment hooks
 export const useGetCommentCount = (postId: Id<"posts">) => 
   useQuery(api.comments.getCommentCount, { postId });
+export const useDeleteComment = () => useMutation(api.comments.deleteComment);
+export const useToggleCommentLike = () => useMutation(api.comments.toggleCommentLike);
+export const useGetCommentLikes = (commentId: Id<"comments">) => 
+  useQuery(api.comments.getCommentLikes, { commentId });
+export const useIsCommentLiked = (userId: Id<"users"> | undefined, commentId: Id<"comments">) => 
+  useQuery(api.comments.isCommentLiked, userId ? { userId, commentId } : "skip");
 
 // Share hooks
 export const useSharePost = () => useMutation(api.shares.sharePost);

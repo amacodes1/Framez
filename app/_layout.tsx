@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { Provider, useDispatch } from 'react-redux';
 import { store } from '../store';
-import { setUser, clearUser, setLoading } from '../store/authSlice';
+import { setUser, clearUser } from '../store/authSlice';
 import { AuthService } from '../services/auth';
 import { ConvexClientProvider } from './ConvexClientProvider';
 import { UserSync } from './UserSync';
@@ -21,7 +21,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           dispatch(clearUser());
         }
-      } catch (error) {
+      } catch {
         dispatch(clearUser());
       }
     };

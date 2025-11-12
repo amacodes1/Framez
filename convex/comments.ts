@@ -37,8 +37,26 @@ export const getCommentsByPost = query({
 });
 
 export const deleteComment = mutation({
-  args: { commentId: v.id("comments") },
+  args: { 
+    commentId: v.id("comments"),
+    userId: v.id("users")
+  },
   handler: async (ctx, args) => {
+    const comment = await ctx.db.get(args.commentId);
+    if (!comment || comment.userId !== args.userId) {
+      throw new Error("Unauthorized to delete this comment");
+    }
+    
+    // Delete associated likes first
+    const likes = await ctx.db
+      .query("commentLikes")
+      .withIndex("by_comment", (q) => q.eq("commentId", args.commentId))
+      .collect();
+    
+    for (const like of likes) {
+      await ctx.db.delete(like._id);
+    }
+    
     await ctx.db.delete(args.commentId);
   },
 });
@@ -51,5 +69,56 @@ export const getCommentCount = query({
       .withIndex("by_post", (q) => q.eq("postId", args.postId))
       .collect();
     return comments.length;
+  },
+});
+
+export const toggleCommentLike = mutation({
+  args: {
+    commentId: v.id("comments"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const existingLike = await ctx.db
+      .query("commentLikes")
+      .withIndex("by_user_comment", (q) => 
+        q.eq("userId", args.userId).eq("commentId", args.commentId)
+      )
+      .first();
+
+    if (existingLike) {
+      await ctx.db.delete(existingLike._id);
+    } else {
+      await ctx.db.insert("commentLikes", {
+        ...args,
+        createdAt: Date.now(),
+      });
+    }
+  },
+});
+
+export const getCommentLikes = query({
+  args: { commentId: v.id("comments") },
+  handler: async (ctx, args) => {
+    const likes = await ctx.db
+      .query("commentLikes")
+      .withIndex("by_comment", (q) => q.eq("commentId", args.commentId))
+      .collect();
+    return likes.length;
+  },
+});
+
+export const isCommentLiked = query({
+  args: {
+    userId: v.id("users"),
+    commentId: v.id("comments"),
+  },
+  handler: async (ctx, args) => {
+    const like = await ctx.db
+      .query("commentLikes")
+      .withIndex("by_user_comment", (q) => 
+        q.eq("userId", args.userId).eq("commentId", args.commentId)
+      )
+      .first();
+    return !!like;
   },
 });

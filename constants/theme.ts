@@ -1,11 +1,11 @@
 export const Colors = {
   // Primary brand colors
-  primary: '#E1306C', // Instagram pink
-  secondary: '#1DA1F2', // Twitter blue
-  accent: '#405DE6', // Instagram purple
+  primary: '#E1306C',
+  secondary: '#1DA1F2',
+  accent: '#405DE6',
   
   // Background colors
-  background: '#000000', // Dark background
+  background: '#000000',
   backgroundLight: '#121212',
   surface: '#1E1E1E',
   surfaceLight: '#2A2A2A',
