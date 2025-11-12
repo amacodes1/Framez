@@ -53,7 +53,8 @@
       "router": {},
       "eas": {
         "projectId": "dcec84f5-d647-4fdb-92ae-b02bfb0023db"
-      }
+      },
+      "EXPO_PUBLIC_CONVEX_URL": "https://polite-ibex-737.convex.cloud"
     }
   }
 }
