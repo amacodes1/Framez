@@ -28,4 +28,11 @@ export default defineSchema({
     followingId: v.id("users"),
     createdAt: v.number(),
   }).index("by_follower", ["followerId"]).index("by_following", ["followingId"]),
+
+  comments: defineTable({
+    postId: v.id("posts"),
+    userId: v.id("users"),
+    content: v.string(),
+    createdAt: v.number(),
+  }).index("by_post", ["postId"]).index("by_user", ["userId"]),
 });

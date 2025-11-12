@@ -59,7 +59,7 @@ export default function FeedScreen() {
 
   const renderHeader = () => (
     <View style={styles.storiesContainer}>
-      <Text style={styles.storiesTitle}>Active Users</Text>
+      <Text style={styles.storiesTitle}>Stories</Text>
       <View style={styles.storiesRow}>
         <TouchableOpacity style={styles.storyItem}>
           <View style={styles.addStoryContainer}>

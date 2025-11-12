@@ -29,40 +29,52 @@ export const AuthService = {
     await SecureStore.deleteItemAsync(USER_KEY);
   },
 
+  async checkEmailExists(email: string): Promise<boolean> {
+    const usersData = await SecureStore.getItemAsync('registered_users');
+    const users = usersData ? JSON.parse(usersData) : [];
+    return users.some((u: any) => u.email === email);
+  },
+
   async login(email: string, password: string): Promise<{ user: any; token: string }> {
-    // Simulate API call - in production, integrate with your auth provider
-    const clerkId = Math.random().toString(36).substr(2, 9);
-    const mockUser = {
-      id: clerkId,
-      email,
-      name: email.split('@')[0],
-      avatar: null,
-      clerkId,
-    };
-    const mockToken = 'mock_token_' + Date.now();
+    const usersData = await SecureStore.getItemAsync('registered_users');
+    const users = usersData ? JSON.parse(usersData) : [];
     
-    await this.saveToken(mockToken);
-    await this.saveUser(mockUser);
+    const user = users.find((u: any) => u.email === email && u.password === password);
+    if (!user) {
+      throw new Error('Invalid credentials');
+    }
     
-    return { user: mockUser, token: mockToken };
+    const token = 'token_' + Date.now();
+    await this.saveToken(token);
+    await this.saveUser(user);
+    
+    return { user, token };
   },
 
   async register(name: string, email: string, password: string): Promise<{ user: any; token: string }> {
-    // Simulate API call - in production, integrate with your auth provider
+    const usersData = await SecureStore.getItemAsync('registered_users');
+    const users = usersData ? JSON.parse(usersData) : [];
+    
+    // Check if email already exists
+    if (users.find((u: any) => u.email === email)) {
+      throw new Error('Email already registered');
+    }
+    
     const clerkId = Math.random().toString(36).substr(2, 9);
-    const mockUser = {
+    const newUser = {
       id: clerkId,
       email,
       name,
+      password,
       avatar: null,
       clerkId,
     };
-    const mockToken = 'mock_token_' + Date.now();
     
-    await this.saveToken(mockToken);
-    await this.saveUser(mockUser);
+    users.push(newUser);
+    await SecureStore.setItemAsync('registered_users', JSON.stringify(users));
     
-    return { user: mockUser, token: mockToken };
+    const token = 'token_' + Date.now();
+    return { user: newUser, token };
   },
 
   async logout(): Promise<void> {

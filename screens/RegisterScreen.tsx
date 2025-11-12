@@ -8,7 +8,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Dimensions,
 } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { useRouter } from 'expo-router';
@@ -16,14 +15,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { setUser } from '../store/authSlice';
 import { AuthService } from '../services/auth';
-import { useCheckEmailExists } from '../services/convex';
+
 import { validateEmail, validatePassword } from '../utils/validation';
 import { Colors, Spacing, BorderRadius, Typography, Shadows } from '../constants/theme';
 
-const { width } = Dimensions.get('window');
-
-export default function AuthScreen() {
-  const [isLogin, setIsLogin] = useState(true);
+export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,19 +31,19 @@ export default function AuthScreen() {
   
   const dispatch = useDispatch();
   const router = useRouter();
-  const emailExists = useCheckEmailExists(email);
+
   
   useEffect(() => {
-    if (!isLogin && password) {
+    if (password) {
       const validation = validatePassword(password);
       setPasswordErrors(validation.errors);
     } else {
       setPasswordErrors([]);
     }
-  }, [password, isLogin]);
+  }, [password]);
 
-  const handleSubmit = async () => {
-    if (!email || !password || (!isLogin && !name)) {
+  const handleRegister = async () => {
+    if (!email || !password || !name) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -57,37 +53,27 @@ export default function AuthScreen() {
       return;
     }
 
-    if (!isLogin) {
-      if (emailExists) {
-        Alert.alert('Error', 'This email is already registered');
-        return;
-      }
-      
-      const passwordValidation = validatePassword(password);
-      if (!passwordValidation.isValid) {
-        Alert.alert('Error', 'Password must meet all requirements');
-        return;
-      }
-      
-      if (password !== confirmPassword) {
-        Alert.alert('Error', 'Passwords do not match');
-        return;
-      }
+    // Email existence check is now handled in AuthService
+    
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      Alert.alert('Error', 'Password must meet all requirements');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
     }
 
     setLoading(true);
     try {
-      let result;
-      if (isLogin) {
-        result = await AuthService.login(email, password);
-      } else {
-        result = await AuthService.register(name, email, password);
-      }
-
-      dispatch(setUser(result.user));
-      router.replace('/(tabs)');
-    } catch {
-      Alert.alert('Error', 'Authentication failed');
+      await AuthService.register(name, email, password);
+      Alert.alert('Success', 'Account created successfully! Please sign in.', [
+        { text: 'OK', onPress: () => router.push('/login') }
+      ]);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -103,7 +89,6 @@ export default function AuthScreen() {
         style={styles.gradient}
       >
         <View style={styles.content}>
-          {/* Logo Section */}
           <View style={styles.logoSection}>
             <LinearGradient
               colors={[Colors.gradientStart, Colors.gradientMiddle, Colors.gradientEnd]}
@@ -115,28 +100,21 @@ export default function AuthScreen() {
             <Text style={styles.tagline}>Share your moments</Text>
           </View>
 
-          {/* Form Section */}
           <View style={styles.formSection}>
-            <Text style={styles.formTitle}>
-              {isLogin ? 'Welcome back!' : 'Join Framez'}
-            </Text>
-            <Text style={styles.formSubtitle}>
-              {isLogin ? 'Sign in to continue' : 'Create your account to get started'}
-            </Text>
+            <Text style={styles.formTitle}>Join Framez</Text>
+            <Text style={styles.formSubtitle}>Create your account to get started</Text>
 
-            {!isLogin && (
-              <View style={styles.inputContainer}>
-                <Ionicons name="person-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Full Name"
-                  placeholderTextColor={Colors.textMuted}
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                />
-              </View>
-            )}
+            <View style={styles.inputContainer}>
+              <Ionicons name="person-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Full Name"
+                placeholderTextColor={Colors.textMuted}
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+              />
+            </View>
 
             <View style={styles.inputContainer}>
               <Ionicons name="mail-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
@@ -173,44 +151,40 @@ export default function AuthScreen() {
               </TouchableOpacity>
             </View>
 
-            {!isLogin && (
-              <>
-                <View style={styles.inputContainer}>
-                  <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
-                  <TextInput
-                    style={[styles.input, styles.passwordInput]}
-                    placeholder="Confirm Password"
-                    placeholderTextColor={Colors.textMuted}
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry={!showConfirmPassword}
-                  />
-                  <TouchableOpacity 
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    style={styles.eyeIcon}
-                  >
-                    <Ionicons 
-                      name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} 
-                      size={20} 
-                      color={Colors.textMuted} 
-                    />
-                  </TouchableOpacity>
-                </View>
-                
-                {passwordErrors.length > 0 && (
-                  <View style={styles.passwordRequirements}>
-                    <Text style={styles.requirementsTitle}>Password must have:</Text>
-                    {passwordErrors.map((error, index) => (
-                      <Text key={index} style={styles.requirementText}>• {error}</Text>
-                    ))}
-                  </View>
-                )}
-              </>
+            <View style={styles.inputContainer}>
+              <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, styles.passwordInput]}
+                placeholder="Confirm Password"
+                placeholderTextColor={Colors.textMuted}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+              />
+              <TouchableOpacity 
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons 
+                  name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} 
+                  size={20} 
+                  color={Colors.textMuted} 
+                />
+              </TouchableOpacity>
+            </View>
+            
+            {passwordErrors.length > 0 && (
+              <View style={styles.passwordRequirements}>
+                <Text style={styles.requirementsTitle}>Password must have:</Text>
+                {passwordErrors.map((error, index) => (
+                  <Text key={index} style={styles.requirementText}>• {error}</Text>
+                ))}
+              </View>
             )}
 
             <TouchableOpacity
               style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-              onPress={handleSubmit}
+              onPress={handleRegister}
               disabled={loading}
             >
               <LinearGradient
@@ -220,27 +194,16 @@ export default function AuthScreen() {
                 style={styles.gradientButton}
               >
                 <Text style={styles.submitButtonText}>
-                  {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Sign Up'}
+                  {loading ? 'Loading...' : 'Sign Up'}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
-
-            {isLogin && (
-              <TouchableOpacity style={styles.forgotPassword}>
-                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-              </TouchableOpacity>
-            )}
           </View>
 
-          {/* Switch Mode */}
           <View style={styles.switchSection}>
-            <Text style={styles.switchText}>
-              {isLogin ? "Don't have an account?" : 'Already have an account?'}
-            </Text>
-            <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
-              <Text style={styles.switchButton}>
-                {isLogin ? 'Sign Up' : 'Sign In'}
-              </Text>
+            <Text style={styles.switchText}>Already have an account?</Text>
+            <TouchableOpacity onPress={() => router.push('/login')}>
+              <Text style={styles.switchButton}>Sign In</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -341,14 +304,6 @@ const styles = StyleSheet.create({
   submitButtonText: {
     ...Typography.bodyMedium,
     color: Colors.text,
-  },
-  forgotPassword: {
-    alignItems: 'center',
-    marginTop: Spacing.lg,
-  },
-  forgotPasswordText: {
-    ...Typography.caption,
-    color: Colors.secondary,
   },
   switchSection: {
     flexDirection: 'row',
